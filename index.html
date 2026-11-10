@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Немецкие карточки</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            margin: 0;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            color: #fff;
+            box-sizing: border-box;
+        }
+        h2 { margin: 10px 0 5px; font-size: 24px; text-align: center; }
+        
+        /* Стили для выбора категории */
+        .category-select {
+            width: 100%;
+            max-width: 340px;
+            padding: 10px;
+            margin-bottom: 12px;
+            border-radius: 10px;
+            border: none;
+            font-size: 15px;
+            font-weight: bold;
+            background: #fff;
+            color: #333;
+            outline: none;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        }
+
+        #counter { font-size: 14px; opacity: 0.85; margin-bottom: 15px; }
+        .card {
+            background: #fff;
+            color: #333;
+            width: 100%;
+            max-width: 340px;
+            height: 180px;
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+            cursor: pointer;
+            padding: 20px;
+            box-sizing: border-box;
+            text-align: center;
+            transition: transform 0.2s;
+            user-select: none;
+        }
+        .card:active { transform: scale(0.98); }
+        .word { font-size: 26px; font-weight: bold; margin-bottom: 8px; word-break: break-word; }
+        .hint { font-size: 13px; color: #888; }
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            width: 100%;
+            max-width: 340px;
+        }
+        button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #fff;
+            transition: opacity 0.2s;
+        }
+        button:active { opacity: 0.8; }
+        .btn-prev { background: #2ecc71; }
+        .btn-next { background: #3498db; }
+        .add-box {
+            background: rgba(255, 255, 255, 0.95);
+            color: #333;
+            width: 100%;
+            max-width: 340px;
+            border-radius: 16px;
+            padding: 15px;
+            box-sizing: border-box;
+            margin-top: 20px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        }
+        .add-box h3 { margin: 0 0 10px; font-size: 16px; }
+        input, select.add-cat {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+        .btn-add { background: #8e44ad; width: 100%; }
+    </style>
+</head>
+<body>
+
+    <h2>Немецкие карточки</h2>
+
+    <!-- Фильтр по частям речи -->
+    <select id="filterCategory" class="category-select" onchange="changeCategory()">
+        <option value="all">Все категории</option>
+        <option value="pronoun">Местоимения (Pronomen)</option>
+        <option value="noun">Существительные (Nomen)</option>
+        <option value="verb">Глаголы (Verben)</option>
+        <option value="adjective">Прилагательные (Adjektive)</option>
+        <option value="adverb">Наречия и обстоятельства</option>
+        <option value="other">Предлоги и прочее</option>
+    </select>
+
+    <div id="counter">Карточка 1 из 0</div>
+
+    <div class="card" id="card" onclick="flipCard()">
+        <div class="word" id="wordText">Загрузка...</div>
+        <div class="hint" id="hintText">(нажмите, чтобы перевернуть)</div>
+    </div>
+
+    <div class="nav-buttons">
+        <button class="btn-prev" onclick="prevCard()">← Назад</button>
+        <button class="btn-next" onclick="nextCard()">Вперед →</button>
+    </div>
+
+    <div class="add-box">
+        <h3>Добавить новое слово</h3>
+        <input type="text" id="ruInput" placeholder="По-русски (например: Я)">
+        <input type="text" id="deInput" placeholder="По-немецки (например: ich)">
+        <select id="addCategory" class="add-cat">
+            <option value="pronoun">Местоимение</option>
+            <option value="noun">Существительное</option>
+            <option value="verb">Глагол</option>
+            <option value="adjective">Прилагательное</option>
+            <option value="adverb">Наречие / Обстоятельство</option>
+            <option value="other">Предлог / Другое</option>
+        </select>
+        <button class="btn-add" onclick="addWord()">Добавить в список</button>
+    </div>
+
+    <script>
+        let defaultWords = [
+            // Местоимения (Pronomen)
+            { de: "ich", ru: "я", category: "pronoun" },
+            { de: "du", ru: "ты", category: "pronoun" },
+            { de: "er", ru: "он", category: "pronoun" },
+            { de: "sie", ru: "она", category: "pronoun" },
+            { de: "es", ru: "оно", category: "pronoun" },
+            { de: "wir", ru: "мы", category: "pronoun" },
+            { de: "ihr", ru: "вы", category: "pronoun" },
+            { de: "sie (множ.)", ru: "они", category: "pronoun" },
+            { de: "Sie (уваж.)", ru: "Вы", category: "pronoun" },
+            { de: "mich", ru: "меня", category: "pronoun" },
+            { de: "dich", ru: "тебя", category: "pronoun" },
+            { de: "mir", ru: "мне", category: "pronoun" },
+            { de: "mein / meine", ru: "мой / моя", category: "pronoun" },
+            { de: "dein / deine", ru: "твой", category: "pronoun" },
+            { de: "kein / keine", ru: "никакой (отрицание)", category: "pronoun" },
+            { de: "wer", ru: "кто", category: "pronoun" },
+            { de: "Was", ru: "что", category: "pronoun" },
+            { de: "Niemand", ru: "никто", category: "pronoun" },
+
+            // Существительные (Nomen)
+            { de: "die Wand", ru: "стена", category: "noun" },
+            { de: "das Büro, -s", ru: "офис", category: "noun" },
+            { de: "Lehrer", ru: "учитель", category: "noun" },
+            { de: "Lehrerin", ru: "учительница", category: "noun" },
+            { de: "das Leben", ru: "жизнь", category: "noun" },
+            { de: "Beruf", ru: "профессия", category: "noun" },
+            { de: "Herr", ru: "господин", category: "noun" },
+            { de: "die Zeit", ru: "время", category: "noun" },
+            { de: "der Hunger", ru: "голод", category: "noun" },
+            { de: "der Durst", ru: "жажда", category: "noun" },
+            { de: "die Schule", ru: "школа", category: "noun" },
+            { de: "der Laden", ru: "магазин", category: "noun" },
+            { de: "Bruder", ru: "брат", category: "noun" },
+            { de: "die Angst", ru: "страх", category: "noun" },
+            { de: "Freizeit", ru: "свободное время", category: "noun" },
+            { de: "Freund", ru: "друг", category: "noun" },
+            { de: "Straße", ru: "улица", category: "noun" },
+            { de: "Stadt", ru: "город", category: "noun" },
+            { de: "Eimer", ru: "ведро", category: "noun" },
+            { de: "Tasse", ru: "кружка / чашка", category: "noun" },
+            { de: "Optimismus", ru: "оптимизм", category: "noun" },
+            { de: "Tourismus", ru: "туризм", category: "noun" },
+            { de: "Mädchen", ru: "девушка", category: "noun" },
+            { de: "Junge", ru: "мальчик", category: "noun" },
+            { de: "Brot", ru: "хлеб", category: "noun" },
+            { de: "Wohnung", ru: "квартира", category: "noun" },
+            { de: "Zeitung", ru: "газета", category: "noun" },
+            { de: "Tee", ru: "чай", category: "noun" },
+            { de: "Tisch", ru: "стол", category: "noun" },
+            { de: "Bäckerei", ru: "пекарня", category: "noun" },
+            { de: "Hund", ru: "собака", category: "noun" },
+            { de: "Katze", ru: "кошка", category: "noun" },
+            { de: "Kaffee", ru: "кофе", category: "noun" },
+            { de: "Mutter / Mama", ru: "мать / мама", category: "noun" },
+            { de: "Hand", ru: "рука", category: "noun" },
+            { de: "Montag", ru: "понедельник", category: "noun" },
+            { de: "Dienstag", ru: "вторник", category: "noun" },
+            { de: "Mittwoch", ru: "среда", category: "noun" },
+            { de: "Donnerstag", ru: "четверг", category: "noun" },
+            { de: "Freitag", ru: "пятница", category: "noun" },
+            { de: "Samstag / Sonntag", ru: "суббота / воскресенье", category: "noun" },
+            { de: "die Woche", ru: "неделя", category: "noun" },
+            { de: "die Uhren", ru: "часы", category: "noun" },
+            { de: "die Stunde", ru: "час", category: "noun" },
+            { de: "die Leute", ru: "люди", category: "noun" },
+            { de: "die Blume", ru: "цветок", category: "noun" },
+            { de: "die Hexe", ru: "ведьма", category: "noun" },
+            { de: "Kind", ru: "ребенок", category: "noun" },
+            { de: "Mann", ru: "мужчина", category: "noun" },
+            { de: "Frau", ru: "женщина", category: "noun" },
+            { de: "Buch", ru: "книга", category: "noun" },
+
+            // Глаголы (Verben)
+            { de: "bleiben", ru: "оставаться", category: "verb" },
+            { de: "fotografieren", ru: "фотографировать", category: "verb" },
+            { de: "lernen", ru: "учить, учиться", category: "verb" },
+            { de: "tanzen", ru: "танцевать", category: "verb" },
+            { de: "machen", ru: "делать", category: "verb" },
+            { de: "arbeiten", ru: "работать", category: "verb" },
+            { de: "antworten", ru: "отвечать", category: "verb" },
+            { de: "spricht", ru: "говорить", category: "verb" },
+            { de: "kommen", ru: "приходить, приезжать", category: "verb" },
+            { de: "wohnen", ru: "жить, проживать", category: "verb" },
+            { de: "spazieren", ru: "гулять", category: "verb" },
+            { de: "mögen", ru: "нравиться, любить", category: "verb" },
+            { de: "spielen", ru: "играть", category: "verb" },
+            { de: "kaufen", ru: "покупать", category: "verb" },
+            { de: "kennen", ru: "знать кого-то", category: "verb" },
+            { de: "helfen", ru: "помогать", category: "verb" },
+            { de: "geben", ru: "давать; передавать", category: "verb" },
+            { de: "schenken", ru: "дарить", category: "verb" },
+            { de: "fragen", ru: "спрашивать", category: "verb" },
+            { de: "lieben", ru: "любить", category: "verb" },
+            { de: "leben", ru: "жить", category: "verb" },
+            { de: "heißen", ru: "называться", category: "verb" },
+            { de: "lachen", ru: "смеяться", category: "verb" },
+
+            // Прилагательные (Adjektive)
+            { de: "langweilig", ru: "скучный, нудный", category: "adjective" },
+            { de: "gut", ru: "хороший / хорошо", category: "adjective" },
+            { de: "schön", ru: "красивый", category: "adjective" },
+            { de: "verheiratet", ru: "женатый", category: "adjective" },
+            { de: "geschieden", ru: "разведенный", category: "adjective" },
+            { de: "ledig", ru: "холостой, незамужняя", category: "adjective" },
+            { de: "frei", ru: "свободен", category: "adjective" },
+            { de: "froh", ru: "радостный", category: "adjective" },
+            { de: "müde", ru: "уставший", category: "adjective" },
+            { de: "satt", ru: "сытый", category: "adjective" },
+            { de: "fertig", ru: "готов", category: "adjective" },
+            { de: "fantastisch", ru: "фантастический", category: "adjective" },
+            { de: "interessant", ru: "интересный", category: "adjective" },
+            { de: "schlecht", ru: "плохой", category: "adjective" },
+
+            // Наречия и обстоятельства (Adverben)
+            { de: "heute", ru: "сегодня", category: "adverb" },
+            { de: "sehr", ru: "очень", category: "adverb" },
+            { de: "viel", ru: "много", category: "adverb" },
+            { de: "auch", ru: "тоже", category: "adverb" },
+            { de: "jetzt", ru: "сейчас", category: "adverb" },
+            { de: "oft", ru: "часто", category: "adverb" },
+            { de: "früh", ru: "рано", category: "adverb" },
+            { de: "danach", ru: "после этого", category: "adverb" },
+            { de: "da", ru: "там, тут", category: "adverb" },
+            { de: "jeden", ru: "каждый", category: "adverb" },
+            { de: "noch", ru: "ещё", category: "adverb" },
+            { de: "schon", ru: "уже", category: "adverb" },
+            { de: "gern (gerne)", ru: "с удовольствием", category: "adverb" },
+            { de: "Wo", ru: "где", category: "adverb" },
+            { de: "woher", ru: "откуда", category: "adverb" },
+            { de: "wohin", ru: "куда", category: "adverb" },
+            { de: "Warum", ru: "почему", category: "adverb" },
+            { de: "Wann", ru: "когда", category: "adverb" },
+            { de: "wie", ru: "как / сколько", category: "adverb" },
+
+            // Предлоги и прочее (Präpositionen / Sonstiges)
+            { de: "bis", ru: "до", category: "other" },
+            { de: "durch", ru: "через", category: "other" },
+            { de: "gegen", ru: "против", category: "other" },
+            { de: "um", ru: "вокруг", category: "other" },
+            { de: "für", ru: "для, за", category: "other" },
+            { de: "ohne", ru: "без", category: "other" },
+            { de: "mit", ru: "с", category: "other" },
+            { de: "nach", ru: "после", category: "other" },
+            { de: "aus", ru: "из", category: "other" },
+            { de: "zu", ru: "к, в", category: "other" },
+            { de: "von", ru: "о, от", category: "other" },
+            { de: "bei", ru: "у, при", category: "other" },
+            { de: "herum", ru: "вокруг, около", category: "other" },
+            { de: "ab", ru: "с (буд.)", category: "other" },
+            { de: "seit", ru: "с (прош.)", category: "other" },
+            { de: "in", ru: "в", category: "other" },
+            { de: "und", ru: "и", category: "other" },
+            { de: "aber", ru: "но", category: "other" },
+            { de: "oder", ru: "или", category: "other" },
+            { de: "nicht", ru: "не", category: "other" }
+        ];
+
+        let allWords = defaultWords;
+        let filteredWords = [...allWords];
+        let currentIndex = 0;
+        let showingDe = true;
+
+        const card = document.getElementById('card');
+        const wordText = document.getElementById('wordText');
+        const hintText = document.getElementById('hintText');
+        const counter = document.getElementById('counter');
+
+        function changeCategory() {
+            const selected = document.getElementById('filterCategory').value;
+            if (selected === 'all') {
+                filteredWords = [...allWords];
+            } else {
+                filteredWords = allWords.filter(w => w.category === selected);
+            }
+            currentIndex = 0;
+            showingDe = true;
+            updateCard();
+        }
+
+        function updateCard() {
+            if (filteredWords.length === 0) {
+                wordText.innerText = "Нет слов";
+                hintText.innerText = "В этой категории пока пусто";
+                counter.innerText = "Карточка 0 из 0";
+                return;
+            }
+            if (currentIndex >= filteredWords.length) currentIndex = 0;
+            if (currentIndex < 0) currentIndex = filteredWords.length - 1;
+
+            if (showingDe) {
+                wordText.innerText = filteredWords[currentIndex].de;
+                hintText.innerText = "(нажмите, чтобы увидеть перевод)";
+            } else {
+                wordText.innerText = filteredWords[currentIndex].ru;
+                hintText.innerText = "(нажмите, чтобы увидеть по-немецки)";
+            }
+            counter.innerText = `Карточка ${currentIndex + 1} из ${filteredWords.length}`;
+        }
+
+        function flipCard() {
+            if (filteredWords.length === 0) return;
+            showingDe = !showingDe;
+            updateCard();
+        }
+
+        function nextCard() {
+            if (filteredWords.length === 0) return;
+            currentIndex++;
+            showingDe = true;
+            updateCard();
+        }
+
+        function prevCard() {
+            if (filteredWords.length === 0) return;
+            currentIndex--;
+            showingDe = true;
+            updateCard();
+        }
+
+        function addWord() {
+            const ru = document.getElementById('ruInput').value.trim();
+            const de = document.getElementById('deInput').value.trim();
+            const cat = document.getElementById('addCategory').value;
+
+            if (!ru || !de) {
+                alert("Пожалуйста, заполните оба поля!");
+                return;
+            }
+
+            const newWord = { de: de, ru: ru, category: cat };
+            allWords.push(newWord);
+
+            document.getElementById('ruInput').value = '';
+            document.getElementById('deInput').value = '';
+
+            // Устанавливаем фильтр на категорию добавленного слова
+            document.getElementById('filterCategory').value = cat;
+            changeCategory();
+            currentIndex = filteredWords.length - 1;
+            updateCard();
+            alert("Слово успешно добавлено!");
+        }
+
+        updateCard();
+    </script>
+</body>
+</html>
