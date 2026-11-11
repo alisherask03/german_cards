@@ -1,391 +1,435 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Мои Немецкие Карточки</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
-            margin: 0;
-            padding: 15px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-            color: #fff;
-            box-sizing: border-box;
-        }
-        h2 {
-            margin: 5px 0 15px 0;
-            font-size: 22px;
-            text-align: center;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
-        .category-select {
-            width: 100%;
-            max-width: 350px;
-            margin-bottom: 15px;
-        }
-        select {
-            width: 100%;
-            padding: 10px 15px;
-            border-radius: 12px;
-            border: none;
-            background: rgba(255, 255, 255, 0.2);
-            color: #fff;
-            font-size: 16px;
-            outline: none;
-            backdrop-filter: blur(10px);
-            cursor: pointer;
-        }
-        select option {
-            background: #2575fc;
-            color: #fff;
-        }
-        .card {
-            background: white;
-            padding: 30px 20px;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            width: 100%;
-            max-width: 320px;
-            text-align: center;
-            cursor: pointer;
-            user-select: none;
-            transition: transform 0.2s ease;
-            box-sizing: border-box;
-        }
-        .card:active {
-            transform: scale(0.98);
-        }
-        .word-de {
-            font-size: 26px;
-            font-weight: bold;
-            margin-bottom: 15px;
-            color: #2c3e50;
-            word-break: break-word;
-        }
-        .word-ru {
-            font-size: 20px;
-            color: #27ae60;
-            display: none;
-            margin-top: 10px;
-            font-weight: 500;
-            word-break: break-word;
-        }
-        .card.show .word-ru {
-            display: block;
-        }
-        .hint {
-            margin-top: 25px;
-            font-size: 13px;
-            color: #95a5a6;
-        }
-        .counter {
-            margin-top: 15px;
-            font-size: 14px;
-            color: rgba(255, 255, 255, 0.8);
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Немецкие карточки</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root {
+    --ink: #1c1233;
+    --paper: #fffaf0;
+    --pink: #ff3d8b;
+    --amber: #ffb627;
+    --teal: #19d3c5;
+    --violet: #6a3dff;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    font-family: "Trebuchet MS", "Segoe UI", system-ui, sans-serif;
+    color: #fff;
+    background: #140a2b;
+    overflow: hidden;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 20px 16px calc(20px + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* ---------- Фон: цвет по краям, тишина в центре ---------- */
+  :root { --h: 0; }
+  .bg { position: fixed; inset: 0; z-index: 0; overflow: hidden; background: #130828; }
+  /* тёмная «подушка» за карточкой, чтобы слово читалось на любом фоне */
+  .bg::after { content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(ellipse 85% 42% at 50% 48%, rgba(15,7,32,.92) 0%, rgba(15,7,32,.6) 55%, transparent 100%); }
+  .blob { position: absolute; border-radius: 50%; filter: blur(55px); opacity: .55;
+    animation: drift 32s ease-in-out infinite alternate;
+    transition: background-color 2s ease, opacity .6s; }
+  .b1 { width: 340px; height: 340px; top: -110px;  left: -110px;  background: hsl(calc(var(--h) + 330), 95%, 58%); }
+  .b2 { width: 360px; height: 360px; bottom: -120px; right: -120px; background: hsl(calc(var(--h) + 175), 90%, 50%); animation-delay: -9s; }
+  .b3 { width: 280px; height: 280px; top: -90px;  right: -110px; background: hsl(calc(var(--h) + 40), 100%, 58%); animation-delay: -17s; }
+  .b4 { width: 300px; height: 300px; bottom: -110px; left: -120px; background: hsl(calc(var(--h) + 260), 95%, 62%); animation-delay: -5s; }
+  @keyframes drift {
+    from { transform: translate(0, 0) scale(1); }
+    to   { transform: translate(40px, 30px) scale(1.2); }
+  }
+  /* немецкие буквы плывут только вдоль краёв, не за карточкой */
+  .letter { position: absolute; bottom: -60px; font-weight: 900; color: rgba(255,255,255,.07);
+    animation: rise linear infinite; user-select: none; }
+  @keyframes rise { to { transform: translateY(-125vh) rotate(25deg); } }
+  /* яркий режим: насыщеннее и быстрее */
+  body:not(.calm) .blob { opacity: .85; animation-duration: 14s; }
+  body:not(.calm) .letter { color: rgba(255,255,255,.14); }
+  .tools { position: relative; z-index: 1; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+
+  /* ---------- Layout ---------- */
+  header, main, nav { position: relative; z-index: 1; width: 100%; max-width: 440px; }
+  h1 { font-size: 26px; margin: 4px 0 14px; text-align: center; letter-spacing: .5px;
+    text-shadow: 0 3px 0 rgba(255,61,139,.55); }
+  select {
+    width: 100%; padding: 13px 14px; border-radius: 16px; border: 2px solid rgba(255,255,255,.25);
+    background: rgba(20,10,43,.55); color: #fff; font-size: 16px; backdrop-filter: blur(8px);
+    appearance: none; -webkit-appearance: none;
+  }
+  main { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 18px; }
+
+  /* ---------- Card ---------- */
+  .scene { width: 100%; height: 250px; perspective: 1200px; }
+  .card { position: relative; width: 100%; height: 100%; transform-style: preserve-3d;
+    transition: transform .55s cubic-bezier(.3,1.4,.5,1); cursor: pointer; }
+  .card.flipped { transform: rotateY(180deg); }
+  .card.enter { animation: pop .4s cubic-bezier(.3,1.5,.5,1); }
+  @keyframes pop { from { opacity: 0; transform: scale(.85) rotate(-3deg); } }
+  .face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden;
+    border-radius: 28px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 24px; text-align: center; box-shadow: 0 18px 0 -6px rgba(0,0,0,.28), 0 28px 50px rgba(0,0,0,.35); }
+  .front { background: var(--paper); color: var(--ink); border: 4px solid var(--ink); }
+  .back  { background: linear-gradient(135deg, var(--amber), var(--pink)); color: var(--ink);
+           border: 4px solid var(--ink); transform: rotateY(180deg); }
+  .word { font-size: clamp(34px, 11vw, 52px); font-weight: 900; line-height: 1.1; word-break: break-word; }
+  .hint { margin-top: 18px; font-size: 14px; opacity: .55; }
+
+  /* ---------- Controls ---------- */
+  nav { display: flex; align-items: center; gap: 12px; }
+  .btn { flex: 1; padding: 16px 0; font-size: 18px; font-weight: 800; color: var(--ink);
+    border: 3px solid var(--ink); border-radius: 18px; cursor: pointer;
+    box-shadow: 0 6px 0 var(--ink); transition: transform .08s, box-shadow .08s; }
+  .btn:active { transform: translateY(5px); box-shadow: 0 1px 0 var(--ink); }
+  .btn:disabled { opacity: .4; }
+  .prev { background: var(--teal); }
+  .next { background: var(--amber); }
+  .counter { min-width: 76px; text-align: center; font-weight: 800; font-size: 17px; }
+  .shuffle { position: relative; z-index: 1; margin-top: 14px; background: none; border: 2px dashed rgba(255,255,255,.4);
+    color: #fff; border-radius: 14px; padding: 8px 16px; font-size: 14px; cursor: pointer; }
+
+  @media (prefers-reduced-motion: reduce) { .blob, .letter, .card, .card.enter { animation: none; transition: none; } }
+</style>
 </head>
 <body>
+<div class="bg" id="bg">
+  <div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div><div class="blob b4"></div>
+</div>
 
-    <h2>🇩🇪 Немецкие карточки</h2>
+<header>
+  <h1>🇩🇪 Немецкие карточки</h1>
+  <select id="deck" aria-label="Набор слов"></select>
+</header>
 
-    <div class="category-select">
-        <select id="categorySelect" onchange="changeCategory()">
-            <option value="all">📚 Все слова (уникальные)</option>
-            <option value="nouns">📦 Существительные</option>
-            <option value="adjectives">⭐ Прилагательные</option>
-            <option value="verbs">⚡ Глаголы</option>
-            <option value="pronouns">👤 Местоимения</option>
-            <option value="adverbs">⏳ Наречия</option>
-            <option value="prepositions">🔗 Предлоги</option>
-            <option value="phrases">💬 Фразы и выражения</option>
-        </select>
+<main>
+  <div class="scene">
+    <div class="card" id="card" role="button" tabindex="0" aria-label="Перевернуть карточку">
+      <div class="face front"><div class="word" id="de"></div><div class="hint">Нажмите, чтобы увидеть перевод</div></div>
+      <div class="face back"><div class="word" id="ru"></div></div>
     </div>
+  </div>
+  <nav>
+    <button class="btn prev" id="prev">← Назад</button>
+    <div class="counter" id="counter"></div>
+    <button class="btn next" id="next">Вперёд →</button>
+  </nav>
+  <div class="tools"><button class="shuffle" id="shuffle">🔀 Перемешать</button><button class="shuffle" id="bgBtn"></button></div>
+</main>
 
-    <div class="card" id="card" onclick="nextCard()">
-        <div class="word-de" id="de">Загрузка...</div>
-        <div class="word-ru" id="ru"></div>
-        <div class="hint">Нажмите, чтобы увидеть перевод</div>
-    </div>
+<script>
+  // Слова из тетради. Формат строки: немецкое | перевод | категория (категорию можно не указывать)
+  const RAW = `
+fragen | спрашивать | Глаголы
+lieben | любить | Глаголы
+leben | жить | Глаголы
+heißen | называться | Глаголы
+ich | я | Местоимения
+du | ты | Местоимения
+er | он | Местоимения
+sie | она / они | Местоимения
+es | оно | Местоимения
+wir | мы | Местоимения
+ihr | вы | Местоимения
+Sie | Вы (вежливое) | Местоимения
+dich | тебя | Местоимения
+nicht | не | Наречия
+in | в | Предлоги
+lachen | смеяться | Глаголы
+gern (gerne) | люблю, нравиться, с удовольствием | Наречия
+gut | хорошо | Прилагательные
+fotografieren | фотографировать | Глаголы
+lernen | учить, учиться | Глаголы
+Ja | Да | Фразы и выражения
+Nein | Нет | Фразы и выражения
+mich | меня | Местоимения
+schön | красиво, красивый | Прилагательные
+tanzen | танцевать | Глаголы
+Tschüß | Пока | Фразы и выражения
+das Büro, -s | офис | Существительные
+Hallo | Привет, Здравствуйте | Фразы и выражения
+Guten Abend | Добрый вечер | Фразы и выражения
+machen | делать | Глаголы
+heute | сегодня | Наречия
+arbeiten | работать | Глаголы
+und | и | 
+antworten | отвечать | Глаголы
+Was | Что | Местоимения
+Wo | Где | Наречия
+Auch | Тоже | Наречия
+Wohnen | Жить, проживать | Глаголы
+Guten Morgen | Доброе утро | Фразы и выражения
+Guten Tag | Добрый день | Фразы и выражения
+Schönen guten Tag | Прекрасного хорошего дня | Фразы и выражения
+Moin | Привет (на севере) | Фразы и выражения
+Grüß Gott | Привет (на юге) | Фразы и выражения
+Auf Wiedersehen | До свидания | Фразы и выражения
+Auf Wiederhören | До свидания (по тел.) | Фразы и выражения
+Schönen Abend noch | Хорошего вечера | Фразы и выражения
+Schönes Wochenende | Хороших выходных | Фразы и выражения
+Gute Nacht | Спокойной ночи | Фразы и выражения
+Bis später | Увидимся (через некоторое время) | Фразы и выражения
+Bis bald | Увидимся скоро | Фразы и выражения
+Bis gleich | Увидимся (почти сразу) | Фразы и выражения
+Danke schön | Большое спасибо | Фразы и выражения
+Bitte schön | Пожалуйста | Фразы и выражения
+Vielen Dank | Большое спасибо | Фразы и выражения
+Entschuldigung | Извините | Фразы и выражения
+ich verstehe nicht | я не понимаю | Фразы и выражения
+ich verstehe Sie | я вас понимаю | Фразы и выражения
+Sprechen Sie Englisch? | Вы говорите по-английски? | Фразы и выражения
+froh | радостный | Прилагательные
+müde | уставший | Прилагательные
+noch | ещё | Наречия
+satt | сытый | Прилагательные
+fertig | готов | Прилагательные
+schon | уже | Наречия
+wie | сколько / как | Наречия
+fantastisch | фантастически | Прилагательные
+interessant | интересно | Прилагательные
+Das | Это | Местоимения
+schlecht | плохо | Прилагательные
+sehr | очень | Наречия
+Kind | ребёнок | Существительные
+Mann | мужчина | Существительные
+Frau | женщина | Существительные
+Buch | книга | Существительные
+Eimer | ведро | Существительные
+Tasse | кружка / чашка | Существительные
+wer | кто | Местоимения
+Optimismus | оптимизм | Существительные
+Tourismus | туризм | Существительные
+Mädchen | девушка | Существительные
+Junge | мальчик | Существительные
+Brot | хлеб | Существительные
+Wohnung | квартира | Существительные
+Zeitung | газета | Существительные
+Tee | чай | Существительные
+Tisch | стол | Существительные
+Bäckerei | пекарня | Существительные
+Hund | собака | Существительные
+Katze | кошка | Существительные
+Kaffee | кофе | Существительные
+mein / meine | мой / моя | Местоимения
+Mutter / Mama | мать / мама | Существительные
+Hand | рука | Существительные
+alle zusammen | все вместе | Фразы и выражения
+Hallo alle zusammen! | Привет всем! | Фразы и выражения
+dein / deine | твой | Местоимения
+kein / keine | никакой (отрицание) | Местоимения
+Lehrer | учитель | Существительные
+Lehrerin | учительница | Существительные
+spricht | говорить | Глаголы
+woher | откуда | Наречия
+kommen | приходить, приезжать | Глаголы
+aus | из | Предлоги
+das Leben | жизнь | Существительные
+von | от, о | Предлоги
+Beruf | профессия | Существительные
+Herr | господин | Существительные
+die Zeit | время | Существительные
+viel | много | Наречия
+der Hunger | голод | Существительные
+der Durst | жажда | Существительные
+viel zu tun | много дел | Фразы и выражения
+nichts | ничего / ничто | Местоимения
+die Angst | страх | Существительные
+Freizeit | свободное время | Существительные
+Freund | друг | Существительные
+Niemand | Никто | Местоимения
+Warum | Почему | Наречия
+da | там, тут | Наречия
+Straße | улица | Существительные
+Stadt | город | Существительные
+mögen | нравиться, любить | Глаголы
+spielen | играть | Глаголы
+kaufen | покупать | Глаголы
+kennen | знать кого-то / быть знакомым | Глаголы
+Wen | кого | Местоимения
+mit | с; при помощи | Предлоги
+bei | у, при, во время, у кого-то | Предлоги
+zu | к, в | Предлоги
+für | для, за | Предлоги
+ohne | без | Предлоги
+spazieren | гулять | Глаголы
+wohin | куда | Наречия
+die Schule | школа | Существительные
+der Laden | магазин | Существительные
+zur / auf Arbeit | на работу | Фразы и выражения
+nach Hause | домой | Фразы и выражения
+mir | мне | Местоимения
+Bruder | брат | Существительные
+verheiratet | женатый | Прилагательные
+geschieden | разведённый | Прилагательные
+ledig | холостой, незамужняя | Прилагательные
+jetzt | сейчас | Наречия
+Aber | Но | 
+oft | часто | Наречия
+oder | или | 
+früh | рано | Наречия
+danach | после этого | Наречия
+frei | свободен | Прилагательные
+Wann | Когда | Наречия
+Montag | Понедельник | Существительные
+Dienstag | Вторник | Существительные
+Mittwoch | Среда | Существительные
+Donnerstag | Четверг | Существительные
+Freitag | Пятница | Существительные
+Samstag / Sonnabend | Суббота | Существительные
+Sonntag | Воскресенье | Существительные
+jeden | каждый | Местоимения
+die Woche | неделя | Существительные
+die Uhren | часы | Существительные
+rund um die Uhr | круглосуточно | Фразы и выражения
+die Stunde | час | Существительные
+die Leute | люди | Существительные
+helfen | помогать | Глаголы
+geben | давать; передавать | Глаголы
+die Blume | цветок | Существительные
+die Hexe | ведьма | Существительные
+schenken | дарить, делать подарок | Глаголы
+bis | до | Предлоги
+durch | через | Предлоги
+gegen | против | Предлоги
+um | вокруг | Предлоги
+nach | после | Предлоги
+langweilig | скучный, нудный / скучно | Прилагательные
+bleiben | оставаться | Глаголы
+achtung | внимание! (осторожно) / уважение (почтение) | Фразы и выражения
+die Wand | стена | Существительные
+herum | вокруг, кругом, около | Наречия
+ab | с (будущее) | Предлоги
+seit | с (прошлое) | Предлоги
+außer | кроме | Предлоги
+gegenüber | напротив | Предлоги
+können | мочь, уметь | Глаголы
+wollen | хотеть, желать, намереваться | Глаголы
+der Unterricht | урок, занятие | Существительные
+Französisch | французский | Прилагательные
+die Brille | очки | Существительные
+die Reise | путешествие | Существительные
+immer | всегда | Наречия
+überhaupt | вообще, совсем | Наречия
+nehmen | брать; взять | Глаголы
+endlich | наконец | Наречия
+lieber | лучше (предпочтительнее) | Наречия
+die Lebensmittel | продукты | Существительные
+stehen | стоять | Глаголы
+rufen | звать | Глаголы
+manchmal | иногда, порой | Наречия
+holen | приносить, приводить | Глаголы
+natürlich | конечно, естественно | Наречия
+aufmachen | открывать | Глаголы
+zumachen | закрыть | Глаголы
+das Fenster | окно, витрина | Существительные
+die Tür | дверь | Существительные
+anfangen | начинать | Глаголы
+öffnen | открывать, отворять | Глаголы
+schließen | закрывать, затворять | Глаголы
+beginnen | начинать, начинаться | Глаголы
+`;
+  const seen = new Set();
+  const ALL = RAW.trim().split("\n").map(l => {
+    const [de, ru, cat] = l.split(" | ");
+    return { de: de.trim(), ru: ru.trim(), cat: (cat || "").trim() };
+  }).filter(w => !seen.has(w.de) && seen.add(w.de));
 
-    <div class="counter" id="counter">0 / 0</div>
+  // Наборы в выпадающем списке. Пустые категории скрываются сами.
+  const CATEGORIES = ["Существительные", "Прилагательные", "Глаголы", "Местоимения",
+                      "Наречия", "Предлоги", "Числительные", "Фразы и выражения"];
+  const DECKS = { "📚 Все слова (уникальные)": ALL };
+  CATEGORIES.forEach(c => {
+    const list = ALL.filter(w => w.cat === c);
+    if (list.length) DECKS[c + " (" + list.length + ")"] = list;
+  });
 
-    <script>
-        if (window.Telegram && window.Telegram.WebApp) {
-            window.Telegram.WebApp.ready();
-            window.Telegram.WebApp.expand();
-        }
+  const tg = window.Telegram && Telegram.WebApp;
+  if (tg) { tg.ready(); tg.expand(); try { tg.setHeaderColor("#2a1259"); tg.setBackgroundColor("#140a2b"); } catch (e) {} }
 
-        const allWords = [
-            { de: "fragen", ru: "спрашивать", cat: "verbs" },
-            { de: "lieben", ru: "любить", cat: "verbs" },
-            { de: "leben", ru: "жить", cat: "verbs" },
-            { de: "heißen", ru: "называться", cat: "verbs" },
-            { de: "ich", ru: "я", cat: "pronouns" },
-            { de: "du", ru: "ты", cat: "pronouns" },
-            { de: "er", ru: "он", cat: "pronouns" },
-            { de: "sie", ru: "она", cat: "pronouns" },
-            { de: "es", ru: "оно", cat: "pronouns" },
-            { de: "wir", ru: "мы", cat: "pronouns" },
-            { de: "ihr", ru: "вы", cat: "pronouns" },
-            { de: "Sie", ru: "Вы", cat: "pronouns" },
-            { de: "dich", ru: "тебя", cat: "pronouns" },
-            { de: "nicht", ru: "не", cat: "adverbs" },
-            { de: "in", ru: "в", cat: "prepositions" },
-            { de: "lachen", ru: "смеяться", cat: "verbs" },
-            { de: "gern (gerne)", ru: "люблю, нравиться, с удовольствием", cat: "adverbs" },
-            { de: "gut", ru: "хорошо", cat: "adjectives" },
-            { de: "fotografieren", ru: "фотографировать", cat: "verbs" },
-            { de: "lernen", ru: "учить, учиться", cat: "verbs" },
-            { de: "ja", ru: "да", cat: "phrases" },
-            { de: "nein", ru: "нет", cat: "phrases" },
-            { de: "mich", ru: "меня", cat: "pronouns" },
-            { de: "schön", ru: "красиво, красивый", cat: "adjectives" },
-            { de: "tanzen", ru: "танцевать", cat: "verbs" },
-            { de: "Tschüss", ru: "пока", cat: "phrases" },
-            { de: "das Büro, -s", ru: "офис", cat: "nouns" },
-            { de: "hallo", ru: "привет, здравствуйте", cat: "phrases" },
-            { de: "Guten Abend", ru: "добрый вечер", cat: "phrases" },
-            { de: "machen", ru: "делать", cat: "verbs" },
-            { de: "heute", ru: "сегодня", cat: "adverbs" },
-            { de: "arbeiten", ru: "работать", cat: "verbs" },
-            { de: "und", ru: "и", cat: "phrases" },
-            { de: "antworten", ru: "отвечать", cat: "verbs" },
-            { de: "was", ru: "что", cat: "pronouns" },
-            { de: "wo", ru: "где", cat: "adverbs" },
-            { de: "auch", ru: "тоже", cat: "adverbs" },
-            { de: "wohnen", ru: "жить, проживать", cat: "verbs" },
-            { de: "Guten Morgen", ru: "доброе утро", cat: "phrases" },
-            { de: "Guten Tag", ru: "добрый день", cat: "phrases" },
-            { de: "schönen guten Tag", ru: "прекрасного хорошего дня", cat: "phrases" },
-            { de: "moin", ru: "привет (в севере)", cat: "phrases" },
-            { de: "Grüß Gott", ru: "привет (в юге)", cat: "phrases" },
-            { de: "auf Wiedersehen", ru: "до свидания", cat: "phrases" },
-            { de: "auf Wiederhören", ru: "до свидания (по тел.)", cat: "phrases" },
-            { de: "schönen Abend noch", ru: "хорошего вечера", cat: "phrases" },
-            { de: "schönes Wochenende", ru: "хороших выходных", cat: "phrases" },
-            { de: "Gute Nacht", ru: "спокойной ночи", cat: "phrases" },
-            { de: "bis später", ru: "увидимся (через некот. время)", cat: "phrases" },
-            { de: "bis bald", ru: "увидимся скоро", cat: "phrases" },
-            { de: "bis gleich", ru: "увидимся (почти после разг.)", cat: "phrases" },
-            { de: "danke schön", ru: "большое спасибо", cat: "phrases" },
-            { de: "bitte schön", ru: "пожалуйста", cat: "phrases" },
-            { de: "vielen Dank", ru: "большое спасибо", cat: "phrases" },
-            { de: "Entschuldigung", ru: "извините", cat: "phrases" },
-            { de: "ich verstehe nicht", ru: "я не понимаю", cat: "phrases" },
-            { de: "ich verstehe Sie", ru: "я вас понимаю", cat: "phrases" },
-            { de: "Sprechen Sie Englisch?", ru: "вы говорите по англ.?", cat: "phrases" },
-            { de: "froh", ru: "радостный", cat: "adjectives" },
-            { de: "müde", ru: "уставший", cat: "adjectives" },
-            { de: "noch", ru: "ещё", cat: "adverbs" },
-            { de: "satt", ru: "сытый", cat: "adjectives" },
-            { de: "fertig", ru: "готов", cat: "adjectives" },
-            { de: "schon", ru: "уже", cat: "adverbs" },
-            { de: "wie", ru: "сколько / как", cat: "adverbs" },
-            { de: "fantastisch", ru: "фантастически", cat: "adjectives" },
-            { de: "interessant", ru: "интересно", cat: "adjectives" },
-            { de: "das", ru: "это", cat: "pronouns" },
-            { de: "schlecht", ru: "плохо", cat: "adjectives" },
-            { de: "sehr", ru: "очень", cat: "adverbs" },
-            { de: "Kind", ru: "ребенок", cat: "nouns" },
-            { de: "Mann", ru: "мужчина", cat: "nouns" },
-            { de: "Frau", ru: "женщина", cat: "nouns" },
-            { de: "Buch", ru: "книга", cat: "nouns" },
-            { de: "Eimer", ru: "ведро", cat: "nouns" },
-            { de: "Tasse", ru: "кружка / чашка", cat: "nouns" },
-            { de: "wer", ru: "кто", cat: "pronouns" },
-            { de: "optimismus", ru: "оптимизм", cat: "nouns" },
-            { de: "tourismus", ru: "туризм", cat: "nouns" },
-            { de: "Mädchen", ru: "девушка", cat: "nouns" },
-            { de: "junge", ru: "мальчик", cat: "nouns" },
-            { de: "Brot", ru: "хлеб", cat: "nouns" },
-            { de: "Wohnung", ru: "квартира", cat: "nouns" },
-            { de: "Zeitung", ru: "газета", cat: "nouns" },
-            { de: "Tee", ru: "чай", cat: "nouns" },
-            { de: "Tisch", ru: "стол", cat: "nouns" },
-            { de: "Bäckerei", ru: "пекарня", cat: "nouns" },
-            { de: "Hund", ru: "собака", cat: "nouns" },
-            { de: "Katze", ru: "кошка", cat: "nouns" },
-            { de: "Kaffee", ru: "кофе", cat: "nouns" },
-            { de: "mein / meine", ru: "мой / моя", cat: "pronouns" },
-            { de: "Mutter / Mama", ru: "мать / мама", cat: "nouns" },
-            { de: "Hand", ru: "рука", cat: "nouns" },
-            { de: "alle zusammen", ru: "все вместе", cat: "phrases" },
-            { de: "hallo alle zusammen!", ru: "привет всем!", cat: "phrases" },
-            { de: "dein / deine", ru: "твой", cat: "pronouns" },
-            { de: "kein / keine", ru: "никакой (отрицание)", cat: "pronouns" },
-            { de: "Lehrer", ru: "учитель", cat: "nouns" },
-            { de: "Lehrerin", ru: "учительница", cat: "nouns" },
-            { de: "spricht", ru: "говорить", cat: "verbs" },
-            { de: "woher", ru: "откуда", cat: "adverbs" },
-            { de: "kommen", ru: "приходить, приезжать", cat: "verbs" },
-            { de: "aus", ru: "из", cat: "prepositions" },
-            { de: "das Leben", ru: "жизнь", cat: "nouns" },
-            { de: "von", ru: "от", cat: "prepositions" },
-            { de: "Beruf", ru: "профессия", cat: "nouns" },
-            { de: "Herr", ru: "господин", cat: "nouns" },
-            { de: "die Zeit", ru: "время", cat: "nouns" },
-            { de: "viel", ru: "много", cat: "adverbs" },
-            { de: "der Hunger", ru: "голод", cat: "nouns" },
-            { de: "der Durst", ru: "жажда", cat: "nouns" },
-            { de: "viel zu tun", ru: "много дел", cat: "phrases" },
-            { de: "nichts", ru: "ничего / ничто", cat: "pronouns" },
-            { de: "die Angst", ru: "страх", cat: "nouns" },
-            { de: "Freizeit", ru: "свободное время", cat: "nouns" },
-            { de: "Freund", ru: "друг", cat: "nouns" },
-            { de: "Niemand", ru: "никто", cat: "pronouns" },
-            { de: "warum", ru: "почему", cat: "adverbs" },
-            { de: "da", ru: "там, тут", cat: "adverbs" },
-            { de: "Straße", ru: "улица", cat: "nouns" },
-            { de: "Stadt", ru: "город", cat: "nouns" },
-            { de: "mögen", ru: "нравиться, любить", cat: "verbs" },
-            { de: "spielen", ru: "играть", cat: "verbs" },
-            { de: "kaufen", ru: "покупать", cat: "verbs" },
-            { de: "kennen", ru: "знать кого-то / быть знакомым", cat: "verbs" },
-            { de: "wen", ru: "кого", cat: "pronouns" },
-            { de: "mit", ru: "с; при помощи", cat: "prepositions" },
-            { de: "bei", ru: "у, при, во время, у кого-то", cat: "prepositions" },
-            { de: "zu", ru: "к, в", cat: "prepositions" },
-            { de: "für", ru: "для, за", cat: "prepositions" },
-            { de: "ohne", ru: "без", cat: "prepositions" },
-            { de: "spazieren", ru: "гулять", cat: "verbs" },
-            { de: "wohin", ru: "куда", cat: "adverbs" },
-            { de: "die Schule", ru: "школа", cat: "nouns" },
-            { de: "der Laden", ru: "магазин", cat: "nouns" },
-            { de: "zur / auf Arbeit", ru: "на работу", cat: "phrases" },
-            { de: "nach Hause", ru: "домой", cat: "phrases" },
-            { de: "mir", ru: "мне", cat: "pronouns" },
-            { de: "Bruder", ru: "брат", cat: "nouns" },
-            { de: "verheiratet", ru: "женатый", cat: "adjectives" },
-            { de: "geschieden", ru: "разведенный", cat: "adjectives" },
-            { de: "ledig", ru: "холостой, незамужняя", cat: "adjectives" },
-            { de: "jetzt", ru: "сейчас", cat: "adverbs" },
-            { de: "aber", ru: "но", cat: "phrases" },
-            { de: "oft", ru: "часто", cat: "adverbs" },
-            { de: "или", ru: "или", cat: "phrases" },
-            { de: "früh", ru: "рано", cat: "adjectives" },
-            { de: "danach", ru: "после этого", cat: "adverbs" },
-            { de: "frei", ru: "свободен", cat: "adjectives" },
-            { de: "Wann", ru: "когда", cat: "adverbs" },
-            { de: "Montag", ru: "понедельник", cat: "nouns" },
-            { de: "Dienstag", ru: "вторник", cat: "nouns" },
-            { de: "Mittwoch", ru: "среда", cat: "nouns" },
-            { de: "Donnerstag", ru: "четверг", cat: "nouns" },
-            { de: "Freitag", ru: "пятница", cat: "nouns" },
-            { de: "Samstag / Sonnabend", ru: "суббота", cat: "nouns" },
-            { de: "Sonntag", ru: "воскресенье", cat: "nouns" },
-            { de: "jeden", ru: "каждый", cat: "adjectives" },
-            { de: "die Woche", ru: "неделя", cat: "nouns" },
-            { de: "die Uhren", ru: "часы", cat: "nouns" },
-            { de: "rund um die Uhr", ru: "круглосуточно", cat: "phrases" },
-            { de: "die Stunde", ru: "час", cat: "nouns" },
-            { de: "die Leute", ru: "люди", cat: "nouns" },
-            { de: "helfen", ru: "помогать", cat: "verbs" },
-            { de: "geben", ru: "давать; передавать", cat: "verbs" },
-            { de: "die Blume", ru: "цветок", cat: "nouns" },
-            { de: "die Hexe", ru: "ведьма", cat: "nouns" },
-            { de: "schenken", ru: "дарить, делать подарок", cat: "verbs" },
-            { de: "bis", ru: "до", cat: "prepositions" },
-            { de: "durch", ru: "через", cat: "prepositions" },
-            { de: "gegen", ru: "против", cat: "prepositions" },
-            { de: "um", ru: "вокруг", cat: "prepositions" },
-            { de: "langweilig", ru: "скучный, нудный / скучно", cat: "adjectives" },
-            { de: "bleiben", ru: "оставаться", cat: "verbs" },
-            { de: "Achtung", ru: "внимание! (осторожно)", cat: "phrases" },
-            { de: "die Wand", ru: "уважение (почтение) / стена", cat: "nouns" },
-            { de: "Herum", ru: "вокруг, кругом, около", cat: "prepositions" },
-            { de: "ab", ru: "с (буд.)", cat: "prepositions" },
-            { de: "seit", ru: "с (прош.)", cat: "prepositions" },
-            { de: "außer", ru: "кроме", cat: "prepositions" },
-            { de: "gegenüber", ru: "напротив", cat: "prepositions" },
-            { de: "können", ru: "мочь, уметь", cat: "verbs" },
-            { de: "wollen", ru: "хотеть, желать, намереваться", cat: "verbs" },
-            { de: "der Unterricht", ru: "урок, занятие", cat: "nouns" },
-            { de: "Französisch", ru: "французский", cat: "nouns" },
-            { de: "die Brille", ru: "очки", cat: "nouns" },
-            { de: "die Reise", ru: "путешествие", cat: "nouns" },
-            { de: "überhaupt", ru: "вообще, совсем", cat: "adverbs" },
-            { de: "nehmen", ru: "брать; взять", cat: "verbs" },
-            { de: "endlich", ru: "наконец", cat: "adverbs" },
-            { de: "lieber", ru: "лучше (предпочтительнее)", cat: "adjectives" },
-            { de: "die Lebensmittel", ru: "продукты", cat: "nouns" },
-            { de: "stehen", ru: "стоять", cat: "verbs" },
-            { de: "rufen", ru: "звать", cat: "verbs" },
-            { de: "manchmal", ru: "иногда, порой", cat: "adverbs" },
-            { de: "holen", ru: "приносить, приводить", cat: "verbs" },
-            { de: "natürlich", ru: "конечно, естественно", cat: "adjectives" },
-            { de: "aufmachen", ru: "открывать", cat: "verbs" },
-            { de: "zumachen", ru: "закрывать", cat: "verbs" },
-            { de: "das Fenster", ru: "окно, витрина", cat: "nouns" },
-            { de: "die Tür", ru: "дверь", cat: "nouns" },
-            { de: "anfangen", ru: "начинать", cat: "verbs" },
-            { de: "öffnen", ru: "открывать, отворять", cat: "verbs" },
-            { de: "schließen", ru: "закрывать, затворять", cat: "verbs" },
-            { de: "beginnen", ru: "начинать, начинаться", cat: "verbs" }
-        ];
+  const $ = id => document.getElementById(id);
+  const card = $("card"), deckSel = $("deck");
+  let words = [], i = 0;
 
-        let currentWords = [...allWords];
-        let currentIndex = 0;
-        let showTranslation = false;
+  Object.keys(DECKS).forEach(name => deckSel.add(new Option(name, name)));
 
-        function changeCategory() {
-            const select = document.getElementById('categorySelect');
-            const cat = select.value;
-            
-            if (cat === 'all') {
-                currentWords = [...allWords];
-            } else {
-                currentWords = allWords.filter(w => w.cat === cat);
-            }
-            
-            currentIndex = 0;
-            showTranslation = false;
-            updateCard();
-        }
+  function loadDeck() { words = DECKS[deckSel.value].slice(); i = 0; render(); }
 
-        function updateCard() {
-            const card = document.getElementById('card');
-            const deEl = document.getElementById('de');
-            const ruEl = document.getElementById('ru');
-            const counterEl = document.getElementById('counter');
+  function render() {
+    card.classList.remove("flipped", "enter");
+    void card.offsetWidth;
+    card.classList.add("enter");
+    $("de").textContent = words[i].de;
+    $("ru").textContent = words[i].ru;
+    document.documentElement.style.setProperty("--h", (i * 7) % 360);
+    $("counter").textContent = (i + 1) + " / " + words.length;
+    $("prev").disabled = i === 0;
+    $("next").disabled = i === words.length - 1;
+  }
 
-            if (currentWords.length === 0) {
-                deEl.textContent = "Нет слов";
-                ruEl.textContent = "";
-                counterEl.textContent = "0 / 0";
-                return;
-            }
+  function go(step) {
+    const n = i + step;
+    if (n < 0 || n >= words.length) return;
+    i = n; render();
+    if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred("light");
+  }
+  const flip = () => card.classList.toggle("flipped");
 
-            deEl.textContent = currentWords[currentIndex].de;
-            ruEl.textContent = currentWords[currentIndex].ru;
-            counterEl.textContent = `${currentIndex + 1} / ${currentWords.length}`;
-            
-            if (showTranslation) {
-                card.classList.add('show');
-            } else {
-                card.classList.remove('show');
-            }
-        }
+  $("prev").onclick = () => go(-1);
+  $("next").onclick = () => go(1);
+  card.onclick = flip;
+  deckSel.onchange = loadDeck;
+  $("shuffle").onclick = () => {
+    for (let k = words.length - 1; k > 0; k--) { const j = Math.floor(Math.random() * (k + 1)); [words[k], words[j]] = [words[j], words[k]]; }
+    i = 0; render();
+  };
+  document.addEventListener("keydown", e => {
+    if (e.key === "ArrowRight") go(1);
+    else if (e.key === "ArrowLeft") go(-1);
+    else if (e.key === " " || e.key === "Enter") { e.preventDefault(); flip(); }
+  });
 
-        function nextCard() {
-            if (currentWords.length === 0) return;
+  // Свайп влево/вправо
+  let x0 = null;
+  card.addEventListener("touchstart", e => { x0 = e.touches[0].clientX; }, { passive: true });
+  card.addEventListener("touchend", e => {
+    if (x0 === null) return;
+    const dx = e.changedTouches[0].clientX - x0;
+    if (Math.abs(dx) > 60) { go(dx < 0 ? 1 : -1); card._swiped = true; setTimeout(() => card._swiped = false, 50); }
+    x0 = null;
+  });
+  card.addEventListener("click", e => { if (card._swiped) { e.stopImmediatePropagation(); } }, true);
 
-            if (!showTranslation) {
-                showTranslation = true;
-            } else {
-                showTranslation = false;
-                currentIndex = (currentIndex + 1) % currentWords.length;
-            }
-            updateCard();
-        }
+  // Немецкие буквы на фоне: только в боковых полях
+  const chars = ["ä", "ö", "ü", "ß", "Ä", "Ö", "Ü", "der", "die", "das", "ja", "nein"];
+  for (let k = 0; k < 12; k++) {
+    const s = document.createElement("span");
+    s.className = "letter";
+    s.textContent = chars[k % chars.length];
+    const left = k % 2 ? Math.random() * 9 : 90 + Math.random() * 6;
+    s.style.left = left + "%";
+    s.style.fontSize = 26 + Math.random() * 26 + "px";
+    s.style.animationDuration = 40 + Math.random() * 30 + "s";
+    s.style.animationDelay = -Math.random() * 60 + "s";
+    $("bg").appendChild(s);
+  }
 
-        updateCard();
-    </script>
+  // Переключатель фона: спокойный (по умолчанию) / яркий
+  let vivid = false;
+  try { vivid = localStorage.getItem("bg") === "vivid"; } catch (e) {}
+  function applyBg() {
+    document.body.classList.toggle("calm", !vivid);
+    $("bgBtn").textContent = vivid ? "🌙 Спокойный фон" : "✨ Яркий фон";
+  }
+  $("bgBtn").onclick = () => {
+    vivid = !vivid;
+    try { localStorage.setItem("bg", vivid ? "vivid" : "calm"); } catch (e) {}
+    applyBg();
+  };
+  applyBg();
+
+  loadDeck();
+</script>
 </body>
 </html>
