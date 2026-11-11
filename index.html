@@ -4,13 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Мои Немецкие Карточки</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { font-family: sans-serif; background: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 320px; text-align: center; cursor: pointer; }
-        .word-de { font-size: 24px; font-weight: bold; margin-bottom: 15px; color: #2c3e50; }
-        .word-ru { font-size: 18px; color: #7f8c8d; display: none; }
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 300px; text-align: center; cursor: pointer; user-select: none; }
+        .word-de { font-size: 26px; font-weight: bold; margin-bottom: 15px; color: #2c3e50; }
+        .word-ru { font-size: 20px; color: #27ae60; display: none; margin-top: 10px; font-weight: 500; }
         .card.show .word-ru { display: block; }
-        .hint { margin-top: 20px; font-size: 12px; color: #aaa; }
+        .hint { margin-top: 20px; font-size: 13px; color: #95a5a6; }
     </style>
 </head>
 <body>
@@ -18,10 +19,13 @@
     <div class="card" id="card" onclick="nextCard()">
         <div class="word-de" id="de">Загрузка...</div>
         <div class="word-ru" id="ru"></div>
-        <div class="hint">Нажмите на карточку, чтобы перевернуть</div>
+        <div class="hint">Нажмите, чтобы увидеть перевод</div>
     </div>
 
     <script>
+        window.Telegram.WebApp.ready();
+        window.Telegram.WebApp.expand();
+
         const germanWords = [
             { de: "fragen", ru: "спрашивать" },
             { de: "lieben", ru: "любить" },
@@ -224,7 +228,7 @@
             { de: "zumachen", ru: "закрывать" },
             { de: "das Fenster", ru: "окно, витрина" },
             { de: "die Tür", ru: "дверь" },
-            5. { de: "anfangen", ru: "начинать" },
+            { de: "anfangen", ru: "начинать" },
             { de: "öffnen", ru: "открывать, отворять" },
             { de: "schließen", ru: "закрывать, затворять" },
             { de: "beginnen", ru: "начинать, начинаться" }
