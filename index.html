@@ -6,15 +6,107 @@
     <title>Мои Немецкие Карточки</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .card { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 300px; text-align: center; cursor: pointer; user-select: none; }
-        .word-de { font-size: 26px; font-weight: bold; margin-bottom: 15px; color: #2c3e50; }
-        .word-ru { font-size: 20px; color: #27ae60; display: none; margin-top: 10px; font-weight: 500; }
-        .card.show .word-ru { display: block; }
-        .hint { margin-top: 20px; font-size: 13px; color: #95a5a6; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            margin: 0;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            color: #fff;
+            box-sizing: border-box;
+        }
+        h2 {
+            margin: 5px 0 15px 0;
+            font-size: 22px;
+            text-align: center;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .category-select {
+            width: 100%;
+            max-width: 350px;
+            margin-bottom: 15px;
+        }
+        select {
+            width: 100%;
+            padding: 10px 15px;
+            border-radius: 12px;
+            border: none;
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+            font-size: 16px;
+            outline: none;
+            backdrop-filter: blur(10px);
+            cursor: pointer;
+        }
+        select option {
+            background: #2575fc;
+            color: #fff;
+        }
+        .card {
+            background: white;
+            padding: 30px 20px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 320px;
+            text-align: center;
+            cursor: pointer;
+            user-select: none;
+            transition: transform 0.2s ease;
+            box-sizing: border-box;
+        }
+        .card:active {
+            transform: scale(0.98);
+        }
+        .word-de {
+            font-size: 26px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #2c3e50;
+            word-break: break-word;
+        }
+        .word-ru {
+            font-size: 20px;
+            color: #27ae60;
+            display: none;
+            margin-top: 10px;
+            font-weight: 500;
+            word-break: break-word;
+        }
+        .card.show .word-ru {
+            display: block;
+        }
+        .hint {
+            margin-top: 25px;
+            font-size: 13px;
+            color: #95a5a6;
+        }
+        .counter {
+            margin-top: 15px;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.8);
+        }
     </style>
 </head>
 <body>
+
+    <h2>🇩🇪 Немецкие карточки</h2>
+
+    <div class="category-select">
+        <select id="categorySelect" onchange="changeCategory()">
+            <option value="all">📚 Все слова (уникальные)</option>
+            <option value="nouns">📦 Существительные</option>
+            <option value="adjectives">⭐ Прилагательные</option>
+            <option value="verbs">⚡ Глаголы</option>
+            <option value="pronouns">👤 Местоимения</option>
+            <option value="adverbs">⏳ Наречия</option>
+            <option value="prepositions">🔗 Предлоги</option>
+            <option value="phrases">💬 Фразы и выражения</option>
+        </select>
+    </div>
 
     <div class="card" id="card" onclick="nextCard()">
         <div class="word-de" id="de">Загрузка...</div>
@@ -22,228 +114,257 @@
         <div class="hint">Нажмите, чтобы увидеть перевод</div>
     </div>
 
-    <script>
-        window.Telegram.WebApp.ready();
-        window.Telegram.WebApp.expand();
+    <div class="counter" id="counter">0 / 0</div>
 
-        const germanWords = [
-            { de: "fragen", ru: "спрашивать" },
-            { de: "lieben", ru: "любить" },
-            { de: "leben", ru: "жить" },
-            { de: "heißen", ru: "называться" },
-            { de: "ich", ru: "я" },
-            { de: "du", ru: "ты" },
-            { de: "er", ru: "он" },
-            { de: "sie", ru: "она" },
-            { de: "es", ru: "оно" },
-            { de: "wir", ru: "мы" },
-            { de: "ihr", ru: "вы" },
-            { de: "Sie", ru: "Вы" },
-            { de: "dich", ru: "тебя" },
-            { de: "nicht", ru: "не" },
-            { de: "in", ru: "в" },
-            { de: "lachen", ru: "смеяться" },
-            { de: "gern (gerne)", ru: "люблю, нравиться, с удовольствием" },
-            { de: "gut", ru: "хорошо" },
-            { de: "fotografieren", ru: "фотографировать" },
-            { de: "lernen", ru: "учить, учиться" },
-            { de: "ja", ru: "да" },
-            { de: "nein", ru: "нет" },
-            { de: "mich", ru: "меня" },
-            { de: "schön", ru: "красиво, красивый" },
-            { de: "tanzen", ru: "танцевать" },
-            { de: "Tschüss", ru: "пока" },
-            { de: "das Büro, -s", ru: "офис" },
-            { de: "hallo", ru: "привет, здравствуйте" },
-            { de: "Guten Abend", ru: "добрый вечер" },
-            { de: "machen", ru: "делать" },
-            { de: "heute", ru: "сегодня" },
-            { de: "arbeiten", ru: "работать" },
-            { de: "und", ru: "и" },
-            { de: "antworten", ru: "отвечать" },
-            { de: "was", ru: "что" },
-            { de: "wo", ru: "где" },
-            { de: "auch", ru: "тоже" },
-            { de: "wohnen", ru: "жить, проживать" },
-            { de: "Guten Morgen", ru: "доброе утро" },
-            { de: "Guten Tag", ru: "добрый день" },
-            { de: "schönen guten Tag", ru: "прекрасного хорошего дня" },
-            { de: "moin", ru: "привет (в севере)" },
-            { de: "Grüß Gott", ru: "привет (в юге)" },
-            { de: "auf Wiedersehen", ru: "до свидания" },
-            { de: "auf Wiederhören", ru: "до свидания (по тел.)" },
-            { de: "schönen Abend noch", ru: "хорошего вечера" },
-            { de: "schönes Wochenende", ru: "хороших выходных" },
-            { de: "Gute Nacht", ru: "спокойной ночи" },
-            { de: "bis später", ru: "увидимся (через некот. время)" },
-            { de: "bis bald", ru: "увидимся скоро" },
-            { de: "bis gleich", ru: "увидимся (почти после разг.)" },
-            { de: "danke schön", ru: "большое спасибо" },
-            { de: "bitte schön", ru: "пожалуйста" },
-            { de: "vielen Dank", ru: "большое спасибо" },
-            { de: "Entschuldigung", ru: "извините" },
-            { de: "ich verstehe nicht", ru: "я не понимаю" },
-            { de: "ich verstehe Sie", ru: "я вас понимаю" },
-            { de: "Sprechen Sie Englisch?", ru: "вы говорите по англ.?" },
-            { de: "froh", ru: "радостный" },
-            { de: "müde", ru: "уставший" },
-            { de: "noch", ru: "ещё" },
-            { de: "satt", ru: "сытый" },
-            { de: "fertig", ru: "готов" },
-            { de: "schon", ru: "уже" },
-            { de: "wie", ru: "сколько / как" },
-            { de: "fantastisch", ru: "фантастически" },
-            { de: "interessant", ru: "интересно" },
-            { de: "das", ru: "это" },
-            { de: "schlecht", ru: "плохо" },
-            { de: "sehr", ru: "очень" },
-            { de: "Kind", ru: "ребенок" },
-            { de: "Mann", ru: "мужчина" },
-            { de: "Frau", ru: "женщина" },
-            { de: "Buch", ru: "книга" },
-            { de: "Eimer", ru: "ведро" },
-            { de: "Tasse", ru: "кружка / чашка" },
-            { de: "wer", ru: "кто" },
-            { de: "optimismus", ru: "оптимизм" },
-            { de: "tourismus", ru: "туризм" },
-            { de: "Mädchen", ru: "девушка" },
-            { de: "junge", ru: "мальчик" },
-            { de: "Brot", ru: "хлеб" },
-            { de: "Wohnung", ru: "квартира" },
-            { de: "Zeitung", ru: "газета" },
-            { de: "Tee", ru: "чай" },
-            { de: "Tisch", ru: "стол" },
-            { de: "Bäckerei", ru: "пекарня" },
-            { de: "Hund", ru: "собака" },
-            { de: "Katze", ru: "кошка" },
-            { de: "Kaffee", ru: "кофе" },
-            { de: "mein / meine", ru: "мой / моя" },
-            { de: "Mutter / Mama", ru: "мать / мама" },
-            { de: "Hand", ru: "рука" },
-            { de: "alle zusammen", ru: "все вместе" },
-            { de: "hallo alle zusammen!", ru: "привет всем!" },
-            { de: "dein / deine", ru: "твой" },
-            { de: "kein / keine", ru: "никакой (отрицание)" },
-            { de: "Lehrer", ru: "учитель" },
-            { de: "Lehrerin", ru: "учительница" },
-            { de: "spricht", ru: "говорить" },
-            { de: "woher", ru: "откуда" },
-            { de: "kommen", ru: "приходить, приезжать" },
-            { de: "aus", ru: "из" },
-            { de: "das Leben", ru: "жизнь" },
-            { de: "von", ru: "от" },
-            { de: "Beruf", ru: "профессия" },
-            { de: "Herr", ru: "господин" },
-            { de: "die Zeit", ru: "время" },
-            { de: "viel", ru: "много" },
-            { de: "der Hunger", ru: "голод" },
-            { de: "der Durst", ru: "жажда" },
-            { de: "viel zu tun", ru: "много дел" },
-            { de: "nichts", ru: "ничего / ничто" },
-            { de: "die Angst", ru: "страх" },
-            { de: "Freizeit", ru: "свободное время" },
-            { de: "Freund", ru: "друг" },
-            { de: "Niemand", ru: "никто" },
-            { de: "warum", ru: "почему" },
-            { de: "da", ru: "там, тут" },
-            { de: "Straße", ru: "улица" },
-            { de: "Stadt", ru: "город" },
-            { de: "mögen", ru: "нравиться, любить" },
-            { de: "spielen", ru: "играть" },
-            { de: "kaufen", ru: "покупать" },
-            { de: "kennen", ru: "знать кого-то / быть знакомым" },
-            { de: "wen", ru: "кого" },
-            { de: "mit", ru: "с; при помощи" },
-            { de: "bei", ru: "у, при, во время, у кого-то" },
-            { de: "zu", ru: "к, в" },
-            { de: "für", ru: "для, за" },
-            { de: "ohne", ru: "без" },
-            { de: "spazieren", ru: "гулять" },
-            { de: "wohin", ru: "куда" },
-            { de: "die Schule", ru: "школа" },
-            { de: "der Laden", ru: "магазин" },
-            { de: "zur / auf Arbeit", ru: "на работу" },
-            { de: "nach Hause", ru: "домой" },
-            { de: "mir", ru: "мне" },
-            { de: "Bruder", ru: "брат" },
-            { de: "verheiratet", ru: "женатый" },
-            { de: "geschieden", ru: "разведенный" },
-            { de: "ledig", ru: "холостой, незамужняя" },
-            { de: "jetzt", ru: "сейчас" },
-            { de: "aber", ru: "но" },
-            { de: "oft", ru: "часто" },
-            { de: "oder", ru: "или" },
-            { de: "früh", ru: "рано" },
-            { de: "danach", ru: "после этого" },
-            { de: "frei", ru: "свободен" },
-            { de: "Wann", ru: "когда" },
-            { de: "Montag", ru: "понедельник" },
-            { de: "Dienstag", ru: "вторник" },
-            { de: "Mittwoch", ru: "среда" },
-            { de: "Donnerstag", ru: "четверг" },
-            { de: "Freitag", ru: "пятница" },
-            { de: "Samstag / Sonnabend", ru: "суббота" },
-            { de: "Sonntag", ru: "воскресенье" },
-            { de: "jeden", ru: "каждый" },
-            { de: "die Woche", ru: "неделя" },
-            { de: "die Uhren", ru: "часы" },
-            { de: "rund um die Uhr", ru: "круглосуточно" },
-            { de: "die Stunde", ru: "час" },
-            { de: "die Leute", ru: "люди" },
-            { de: "helfen", ru: "помогать" },
-            { de: "geben", ru: "давать; передавать" },
-            { de: "die Blume", ru: "цветок" },
-            { de: "die Hexe", ru: "ведьма" },
-            { de: "schenken", ru: "дарить, делать подарок" },
-            { de: "bis", ru: "до" },
-            { de: "durch", ru: "через" },
-            { de: "gegen", ru: "против" },
-            { de: "um", ru: "вокруг" },
-            { de: "langweilig", ru: "скучный, нудный / скучно" },
-            { de: "bleiben", ru: "оставаться" },
-            { de: "Achtung", ru: "внимание! (осторожно)" },
-            { de: "die Wand", ru: "уважение (почтение) / стена" },
-            { de: "Herum", ru: "вокруг, кругом, около" },
-            { de: "ab", ru: "с (буд.)" },
-            { de: "seit", ru: "с (прош.)" },
-            { de: "außer", ru: "кроме" },
-            { de: "gegenüber", ru: "напротив" },
-            { de: "können", ru: "мочь, уметь" },
-            { de: "wollen", ru: "хотеть, желать, намереваться" },
-            { de: "der Unterricht", ru: "урок, занятие" },
-            { de: "Französisch", ru: "французский" },
-            { de: "die Brille", ru: "очки" },
-            { de: "die Reise", ru: "путешествие" },
-            { de: "überhaupt", ru: "вообще, совсем" },
-            { de: "nehmen", ru: "брать; взять" },
-            { de: "endlich", ru: "наконец" },
-            { de: "lieber", ru: "лучше (предпочтительнее)" },
-            { de: "die Lebensmittel", ru: "продукты" },
-            { de: "stehen", ru: "стоять" },
-            { de: "rufen", ru: "звать" },
-            { de: "manchmal", ru: "иногда, порой" },
-            { de: "holen", ru: "приносить, приводить" },
-            { de: "natürlich", ru: "конечно, естественно" },
-            { de: "aufmachen", ru: "открывать" },
-            { de: "zumachen", ru: "закрывать" },
-            { de: "das Fenster", ru: "окно, витрина" },
-            { de: "die Tür", ru: "дверь" },
-            { de: "anfangen", ru: "начинать" },
-            { de: "öffnen", ru: "открывать, отворять" },
-            { de: "schließen", ru: "закрывать, затворять" },
-            { de: "beginnen", ru: "начинать, начинаться" }
+    <script>
+        if (window.Telegram && window.Telegram.WebApp) {
+            window.Telegram.WebApp.ready();
+            window.Telegram.WebApp.expand();
+        }
+
+        const allWords = [
+            { de: "fragen", ru: "спрашивать", cat: "verbs" },
+            { de: "lieben", ru: "любить", cat: "verbs" },
+            { de: "leben", ru: "жить", cat: "verbs" },
+            { de: "heißen", ru: "называться", cat: "verbs" },
+            { de: "ich", ru: "я", cat: "pronouns" },
+            { de: "du", ru: "ты", cat: "pronouns" },
+            { de: "er", ru: "он", cat: "pronouns" },
+            { de: "sie", ru: "она", cat: "pronouns" },
+            { de: "es", ru: "оно", cat: "pronouns" },
+            { de: "wir", ru: "мы", cat: "pronouns" },
+            { de: "ihr", ru: "вы", cat: "pronouns" },
+            { de: "Sie", ru: "Вы", cat: "pronouns" },
+            { de: "dich", ru: "тебя", cat: "pronouns" },
+            { de: "nicht", ru: "не", cat: "adverbs" },
+            { de: "in", ru: "в", cat: "prepositions" },
+            { de: "lachen", ru: "смеяться", cat: "verbs" },
+            { de: "gern (gerne)", ru: "люблю, нравиться, с удовольствием", cat: "adverbs" },
+            { de: "gut", ru: "хорошо", cat: "adjectives" },
+            { de: "fotografieren", ru: "фотографировать", cat: "verbs" },
+            { de: "lernen", ru: "учить, учиться", cat: "verbs" },
+            { de: "ja", ru: "да", cat: "phrases" },
+            { de: "nein", ru: "нет", cat: "phrases" },
+            { de: "mich", ru: "меня", cat: "pronouns" },
+            { de: "schön", ru: "красиво, красивый", cat: "adjectives" },
+            { de: "tanzen", ru: "танцевать", cat: "verbs" },
+            { de: "Tschüss", ru: "пока", cat: "phrases" },
+            { de: "das Büro, -s", ru: "офис", cat: "nouns" },
+            { de: "hallo", ru: "привет, здравствуйте", cat: "phrases" },
+            { de: "Guten Abend", ru: "добрый вечер", cat: "phrases" },
+            { de: "machen", ru: "делать", cat: "verbs" },
+            { de: "heute", ru: "сегодня", cat: "adverbs" },
+            { de: "arbeiten", ru: "работать", cat: "verbs" },
+            { de: "und", ru: "и", cat: "phrases" },
+            { de: "antworten", ru: "отвечать", cat: "verbs" },
+            { de: "was", ru: "что", cat: "pronouns" },
+            { de: "wo", ru: "где", cat: "adverbs" },
+            { de: "auch", ru: "тоже", cat: "adverbs" },
+            { de: "wohnen", ru: "жить, проживать", cat: "verbs" },
+            { de: "Guten Morgen", ru: "доброе утро", cat: "phrases" },
+            { de: "Guten Tag", ru: "добрый день", cat: "phrases" },
+            { de: "schönen guten Tag", ru: "прекрасного хорошего дня", cat: "phrases" },
+            { de: "moin", ru: "привет (в севере)", cat: "phrases" },
+            { de: "Grüß Gott", ru: "привет (в юге)", cat: "phrases" },
+            { de: "auf Wiedersehen", ru: "до свидания", cat: "phrases" },
+            { de: "auf Wiederhören", ru: "до свидания (по тел.)", cat: "phrases" },
+            { de: "schönen Abend noch", ru: "хорошего вечера", cat: "phrases" },
+            { de: "schönes Wochenende", ru: "хороших выходных", cat: "phrases" },
+            { de: "Gute Nacht", ru: "спокойной ночи", cat: "phrases" },
+            { de: "bis später", ru: "увидимся (через некот. время)", cat: "phrases" },
+            { de: "bis bald", ru: "увидимся скоро", cat: "phrases" },
+            { de: "bis gleich", ru: "увидимся (почти после разг.)", cat: "phrases" },
+            { de: "danke schön", ru: "большое спасибо", cat: "phrases" },
+            { de: "bitte schön", ru: "пожалуйста", cat: "phrases" },
+            { de: "vielen Dank", ru: "большое спасибо", cat: "phrases" },
+            { de: "Entschuldigung", ru: "извините", cat: "phrases" },
+            { de: "ich verstehe nicht", ru: "я не понимаю", cat: "phrases" },
+            { de: "ich verstehe Sie", ru: "я вас понимаю", cat: "phrases" },
+            { de: "Sprechen Sie Englisch?", ru: "вы говорите по англ.?", cat: "phrases" },
+            { de: "froh", ru: "радостный", cat: "adjectives" },
+            { de: "müde", ru: "уставший", cat: "adjectives" },
+            { de: "noch", ru: "ещё", cat: "adverbs" },
+            { de: "satt", ru: "сытый", cat: "adjectives" },
+            { de: "fertig", ru: "готов", cat: "adjectives" },
+            { de: "schon", ru: "уже", cat: "adverbs" },
+            { de: "wie", ru: "сколько / как", cat: "adverbs" },
+            { de: "fantastisch", ru: "фантастически", cat: "adjectives" },
+            { de: "interessant", ru: "интересно", cat: "adjectives" },
+            { de: "das", ru: "это", cat: "pronouns" },
+            { de: "schlecht", ru: "плохо", cat: "adjectives" },
+            { de: "sehr", ru: "очень", cat: "adverbs" },
+            { de: "Kind", ru: "ребенок", cat: "nouns" },
+            { de: "Mann", ru: "мужчина", cat: "nouns" },
+            { de: "Frau", ru: "женщина", cat: "nouns" },
+            { de: "Buch", ru: "книга", cat: "nouns" },
+            { de: "Eimer", ru: "ведро", cat: "nouns" },
+            { de: "Tasse", ru: "кружка / чашка", cat: "nouns" },
+            { de: "wer", ru: "кто", cat: "pronouns" },
+            { de: "optimismus", ru: "оптимизм", cat: "nouns" },
+            { de: "tourismus", ru: "туризм", cat: "nouns" },
+            { de: "Mädchen", ru: "девушка", cat: "nouns" },
+            { de: "junge", ru: "мальчик", cat: "nouns" },
+            { de: "Brot", ru: "хлеб", cat: "nouns" },
+            { de: "Wohnung", ru: "квартира", cat: "nouns" },
+            { de: "Zeitung", ru: "газета", cat: "nouns" },
+            { de: "Tee", ru: "чай", cat: "nouns" },
+            { de: "Tisch", ru: "стол", cat: "nouns" },
+            { de: "Bäckerei", ru: "пекарня", cat: "nouns" },
+            { de: "Hund", ru: "собака", cat: "nouns" },
+            { de: "Katze", ru: "кошка", cat: "nouns" },
+            { de: "Kaffee", ru: "кофе", cat: "nouns" },
+            { de: "mein / meine", ru: "мой / моя", cat: "pronouns" },
+            { de: "Mutter / Mama", ru: "мать / мама", cat: "nouns" },
+            { de: "Hand", ru: "рука", cat: "nouns" },
+            { de: "alle zusammen", ru: "все вместе", cat: "phrases" },
+            { de: "hallo alle zusammen!", ru: "привет всем!", cat: "phrases" },
+            { de: "dein / deine", ru: "твой", cat: "pronouns" },
+            { de: "kein / keine", ru: "никакой (отрицание)", cat: "pronouns" },
+            { de: "Lehrer", ru: "учитель", cat: "nouns" },
+            { de: "Lehrerin", ru: "учительница", cat: "nouns" },
+            { de: "spricht", ru: "говорить", cat: "verbs" },
+            { de: "woher", ru: "откуда", cat: "adverbs" },
+            { de: "kommen", ru: "приходить, приезжать", cat: "verbs" },
+            { de: "aus", ru: "из", cat: "prepositions" },
+            { de: "das Leben", ru: "жизнь", cat: "nouns" },
+            { de: "von", ru: "от", cat: "prepositions" },
+            { de: "Beruf", ru: "профессия", cat: "nouns" },
+            { de: "Herr", ru: "господин", cat: "nouns" },
+            { de: "die Zeit", ru: "время", cat: "nouns" },
+            { de: "viel", ru: "много", cat: "adverbs" },
+            { de: "der Hunger", ru: "голод", cat: "nouns" },
+            { de: "der Durst", ru: "жажда", cat: "nouns" },
+            { de: "viel zu tun", ru: "много дел", cat: "phrases" },
+            { de: "nichts", ru: "ничего / ничто", cat: "pronouns" },
+            { de: "die Angst", ru: "страх", cat: "nouns" },
+            { de: "Freizeit", ru: "свободное время", cat: "nouns" },
+            { de: "Freund", ru: "друг", cat: "nouns" },
+            { de: "Niemand", ru: "никто", cat: "pronouns" },
+            { de: "warum", ru: "почему", cat: "adverbs" },
+            { de: "da", ru: "там, тут", cat: "adverbs" },
+            { de: "Straße", ru: "улица", cat: "nouns" },
+            { de: "Stadt", ru: "город", cat: "nouns" },
+            { de: "mögen", ru: "нравиться, любить", cat: "verbs" },
+            { de: "spielen", ru: "играть", cat: "verbs" },
+            { de: "kaufen", ru: "покупать", cat: "verbs" },
+            { de: "kennen", ru: "знать кого-то / быть знакомым", cat: "verbs" },
+            { de: "wen", ru: "кого", cat: "pronouns" },
+            { de: "mit", ru: "с; при помощи", cat: "prepositions" },
+            { de: "bei", ru: "у, при, во время, у кого-то", cat: "prepositions" },
+            { de: "zu", ru: "к, в", cat: "prepositions" },
+            { de: "für", ru: "для, за", cat: "prepositions" },
+            { de: "ohne", ru: "без", cat: "prepositions" },
+            { de: "spazieren", ru: "гулять", cat: "verbs" },
+            { de: "wohin", ru: "куда", cat: "adverbs" },
+            { de: "die Schule", ru: "школа", cat: "nouns" },
+            { de: "der Laden", ru: "магазин", cat: "nouns" },
+            { de: "zur / auf Arbeit", ru: "на работу", cat: "phrases" },
+            { de: "nach Hause", ru: "домой", cat: "phrases" },
+            { de: "mir", ru: "мне", cat: "pronouns" },
+            { de: "Bruder", ru: "брат", cat: "nouns" },
+            { de: "verheiratet", ru: "женатый", cat: "adjectives" },
+            { de: "geschieden", ru: "разведенный", cat: "adjectives" },
+            { de: "ledig", ru: "холостой, незамужняя", cat: "adjectives" },
+            { de: "jetzt", ru: "сейчас", cat: "adverbs" },
+            { de: "aber", ru: "но", cat: "phrases" },
+            { de: "oft", ru: "часто", cat: "adverbs" },
+            { de: "или", ru: "или", cat: "phrases" },
+            { de: "früh", ru: "рано", cat: "adjectives" },
+            { de: "danach", ru: "после этого", cat: "adverbs" },
+            { de: "frei", ru: "свободен", cat: "adjectives" },
+            { de: "Wann", ru: "когда", cat: "adverbs" },
+            { de: "Montag", ru: "понедельник", cat: "nouns" },
+            { de: "Dienstag", ru: "вторник", cat: "nouns" },
+            { de: "Mittwoch", ru: "среда", cat: "nouns" },
+            { de: "Donnerstag", ru: "четверг", cat: "nouns" },
+            { de: "Freitag", ru: "пятница", cat: "nouns" },
+            { de: "Samstag / Sonnabend", ru: "суббота", cat: "nouns" },
+            { de: "Sonntag", ru: "воскресенье", cat: "nouns" },
+            { de: "jeden", ru: "каждый", cat: "adjectives" },
+            { de: "die Woche", ru: "неделя", cat: "nouns" },
+            { de: "die Uhren", ru: "часы", cat: "nouns" },
+            { de: "rund um die Uhr", ru: "круглосуточно", cat: "phrases" },
+            { de: "die Stunde", ru: "час", cat: "nouns" },
+            { de: "die Leute", ru: "люди", cat: "nouns" },
+            { de: "helfen", ru: "помогать", cat: "verbs" },
+            { de: "geben", ru: "давать; передавать", cat: "verbs" },
+            { de: "die Blume", ru: "цветок", cat: "nouns" },
+            { de: "die Hexe", ru: "ведьма", cat: "nouns" },
+            { de: "schenken", ru: "дарить, делать подарок", cat: "verbs" },
+            { de: "bis", ru: "до", cat: "prepositions" },
+            { de: "durch", ru: "через", cat: "prepositions" },
+            { de: "gegen", ru: "против", cat: "prepositions" },
+            { de: "um", ru: "вокруг", cat: "prepositions" },
+            { de: "langweilig", ru: "скучный, нудный / скучно", cat: "adjectives" },
+            { de: "bleiben", ru: "оставаться", cat: "verbs" },
+            { de: "Achtung", ru: "внимание! (осторожно)", cat: "phrases" },
+            { de: "die Wand", ru: "уважение (почтение) / стена", cat: "nouns" },
+            { de: "Herum", ru: "вокруг, кругом, около", cat: "prepositions" },
+            { de: "ab", ru: "с (буд.)", cat: "prepositions" },
+            { de: "seit", ru: "с (прош.)", cat: "prepositions" },
+            { de: "außer", ru: "кроме", cat: "prepositions" },
+            { de: "gegenüber", ru: "напротив", cat: "prepositions" },
+            { de: "können", ru: "мочь, уметь", cat: "verbs" },
+            { de: "wollen", ru: "хотеть, желать, намереваться", cat: "verbs" },
+            { de: "der Unterricht", ru: "урок, занятие", cat: "nouns" },
+            { de: "Französisch", ru: "французский", cat: "nouns" },
+            { de: "die Brille", ru: "очки", cat: "nouns" },
+            { de: "die Reise", ru: "путешествие", cat: "nouns" },
+            { de: "überhaupt", ru: "вообще, совсем", cat: "adverbs" },
+            { de: "nehmen", ru: "брать; взять", cat: "verbs" },
+            { de: "endlich", ru: "наконец", cat: "adverbs" },
+            { de: "lieber", ru: "лучше (предпочтительнее)", cat: "adjectives" },
+            { de: "die Lebensmittel", ru: "продукты", cat: "nouns" },
+            { de: "stehen", ru: "стоять", cat: "verbs" },
+            { de: "rufen", ru: "звать", cat: "verbs" },
+            { de: "manchmal", ru: "иногда, порой", cat: "adverbs" },
+            { de: "holen", ru: "приносить, приводить", cat: "verbs" },
+            { de: "natürlich", ru: "конечно, естественно", cat: "adjectives" },
+            { de: "aufmachen", ru: "открывать", cat: "verbs" },
+            { de: "zumachen", ru: "закрывать", cat: "verbs" },
+            { de: "das Fenster", ru: "окно, витрина", cat: "nouns" },
+            { de: "die Tür", ru: "дверь", cat: "nouns" },
+            { de: "anfangen", ru: "начинать", cat: "verbs" },
+            { de: "öffnen", ru: "открывать, отворять", cat: "verbs" },
+            { de: "schließen", ru: "закрывать, затворять", cat: "verbs" },
+            { de: "beginnen", ru: "начинать, начинаться", cat: "verbs" }
         ];
 
+        let currentWords = [...allWords];
         let currentIndex = 0;
         let showTranslation = false;
+
+        function changeCategory() {
+            const select = document.getElementById('categorySelect');
+            const cat = select.value;
+            
+            if (cat === 'all') {
+                currentWords = [...allWords];
+            } else {
+                currentWords = allWords.filter(w => w.cat === cat);
+            }
+            
+            currentIndex = 0;
+            showTranslation = false;
+            updateCard();
+        }
 
         function updateCard() {
             const card = document.getElementById('card');
             const deEl = document.getElementById('de');
             const ruEl = document.getElementById('ru');
+            const counterEl = document.getElementById('counter');
 
-            deEl.textContent = germanWords[currentIndex].de;
-            ruEl.textContent = germanWords[currentIndex].ru;
+            if (currentWords.length === 0) {
+                deEl.textContent = "Нет слов";
+                ruEl.textContent = "";
+                counterEl.textContent = "0 / 0";
+                return;
+            }
+
+            deEl.textContent = currentWords[currentIndex].de;
+            ruEl.textContent = currentWords[currentIndex].ru;
+            counterEl.textContent = `${currentIndex + 1} / ${currentWords.length}`;
             
             if (showTranslation) {
                 card.classList.add('show');
@@ -253,11 +374,13 @@
         }
 
         function nextCard() {
+            if (currentWords.length === 0) return;
+
             if (!showTranslation) {
                 showTranslation = true;
             } else {
                 showTranslation = false;
-                currentIndex = (currentIndex + 1) % germanWords.length;
+                currentIndex = (currentIndex + 1) % currentWords.length;
             }
             updateCard();
         }
