@@ -51,6 +51,15 @@
   body:not(.calm) .letter { color: rgba(255,255,255,.14); }
   .tools { position: relative; z-index: 1; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
 
+  #q { width: 100%; margin-top: 10px; padding: 12px 14px; border-radius: 16px; border: 2px solid rgba(255,255,255,.25);
+    background: rgba(20,10,43,.55); color: #fff; font-size: 16px; backdrop-filter: blur(8px); outline: none; }
+  #q::placeholder { color: rgba(255,255,255,.55); }
+  #results { margin-top: 8px; max-height: 34vh; overflow-y: auto; border-radius: 16px; background: rgba(20,10,43,.85); }
+  #results button { display: block; width: 100%; text-align: left; padding: 10px 14px; background: none; border: 0;
+    border-bottom: 1px solid rgba(255,255,255,.1); color: #fff; font-size: 15px; cursor: pointer; }
+  #results .none { padding: 10px 14px; opacity: .7; font-size: 15px; }
+  .stat { text-align: center; font-size: 13px; opacity: .8; margin-top: 8px; }
+
   /* ---------- Layout ---------- */
   header, main, nav { position: relative; z-index: 1; width: 100%; max-width: 440px; }
   h1 { font-size: 26px; margin: 4px 0 14px; text-align: center; letter-spacing: .5px;
@@ -102,6 +111,9 @@
 <header>
   <h1>🇩🇪 Немецкие карточки</h1>
   <select id="deck" aria-label="Набор слов"></select>
+  <input id="q" type="search" placeholder="🔍 Поиск: по-немецки или по-русски" autocomplete="off">
+  <div id="results" hidden></div>
+  <div id="stat" class="stat" hidden></div>
 </header>
 
 <main>
@@ -116,9 +128,10 @@
     <div class="counter" id="counter"></div>
     <button class="btn next" id="next">Вперёд →</button>
   </nav>
-  <div class="tools"><button class="shuffle" id="shuffle">🔀 Перемешать</button><button class="shuffle" id="bgBtn"></button></div>
+  <div class="tools"><button class="shuffle" id="dirBtn"></button><button class="shuffle" id="shuffle">🔀 Перемешать</button><button class="shuffle" id="bgBtn"></button></div>
 </main>
 
+<script src="words.js"></script>
 <script>
   // Слова из тетради. Формат строки: немецкое | перевод | категория (категорию можно не указывать)
   const RAW = `
@@ -331,7 +344,7 @@ schließen | закрывать, затворять | Глаголы
 beginnen | начинать, начинаться | Глаголы
 `;
   const seen = new Set();
-  const ALL = RAW.trim().split("\n").map(l => {
+  const ALL = (RAW + "\n" + (window.EXTRA || "")).split("\n").filter(l => l.trim()).map(l => {
     const [de, ru, cat] = l.split(" | ");
     return { de: de.trim(), ru: ru.trim(), cat: (cat || "").trim() };
   }).filter(w => !seen.has(w.de) && seen.add(w.de));
@@ -351,6 +364,8 @@ beginnen | начинать, начинаться | Глаголы
   const $ = id => document.getElementById(id);
   const card = $("card"), deckSel = $("deck");
   let words = [], i = 0;
+  let rev = false; // false: немецкий → русский, true: русский → немецкий
+  try { rev = localStorage.getItem("dir") === "ru"; } catch (e) {}
 
   Object.keys(DECKS).forEach(name => deckSel.add(new Option(name, name)));
 
@@ -360,8 +375,14 @@ beginnen | начинать, начинаться | Глаголы
     card.classList.remove("flipped", "enter");
     void card.offsetWidth;
     card.classList.add("enter");
-    $("de").textContent = words[i].de;
-    $("ru").textContent = words[i].ru;
+    const front = rev ? words[i].ru : words[i].de;
+    const back = rev ? words[i].de : words[i].ru;
+    $("de").textContent = front;
+    $("ru").textContent = back;
+    [$("de"), $("ru")].forEach(el => {
+      const n = el.textContent.length;
+      el.style.fontSize = n > 40 ? "22px" : n > 24 ? "28px" : n > 14 ? "36px" : "";
+    });
     document.documentElement.style.setProperty("--h", (i * 7) % 360);
     $("counter").textContent = (i + 1) + " / " + words.length;
     $("prev").disabled = i === 0;
@@ -429,8 +450,46 @@ beginnen | начинать, начинаться | Глаголы
   };
   applyBg();
 
+  // Поиск по немецкому и русскому (ä=a, ö=o, ü=u, ß=ss)
+  const norm = t => t.toLowerCase().replace(/ä/g, "a").replace(/ö/g, "o").replace(/ü/g, "u").replace(/ß/g, "ss").replace(/ё/g, "е");
+  const resBox = $("results");
+  $("q").oninput = () => {
+    const q = norm($("q").value.trim());
+    resBox.innerHTML = "";
+    if (!q) { resBox.hidden = true; return; }
+    const found = ALL.filter(w => norm(w.de).includes(q) || norm(w.ru).includes(q));
+    resBox.hidden = false;
+    if (!found.length) { resBox.innerHTML = '<div class="none">Ничего не найдено</div>'; return; }
+    found.slice(0, 30).forEach((w, idx) => {
+      const b = document.createElement("button");
+      b.textContent = w.de + " — " + w.ru;
+      b.onclick = () => { words = found; i = idx; resBox.hidden = true; $("q").value = ""; render(); card.classList.add("flipped"); };
+      resBox.appendChild(b);
+    });
+  };
+  deckSel.addEventListener("change", () => { $("q").value = ""; resBox.hidden = true; });
+
+  // Счётчик пользователей (см. инструкцию): вставь ссылку Apps Script и свой Telegram ID
+  const STATS_URL = "";
+  const OWNER_ID = 0;
+  const me = tg && tg.initDataUnsafe && tg.initDataUnsafe.user;
+  if (STATS_URL && me) {
+    fetch(STATS_URL + "?uid=" + me.id).then(r => r.text()).then(t => {
+      if (me.id === OWNER_ID) { $("stat").textContent = "👥 Пользователей: " + t; $("stat").hidden = false; }
+    }).catch(() => {});
+  }
+
+  // Переключатель направления: 🇩🇪 → 🇷🇺 / 🇷🇺 → 🇩🇪
+  function applyDir() { $("dirBtn").textContent = rev ? "🇷🇺 → 🇩🇪" : "🇩🇪 → 🇷🇺"; }
+  $("dirBtn").onclick = () => {
+    rev = !rev;
+    try { localStorage.setItem("dir", rev ? "ru" : "de"); } catch (e) {}
+    applyDir();
+    render();
+  };
+  applyDir();
+
   loadDeck();
 </script>
 </body>
 </html>
-
