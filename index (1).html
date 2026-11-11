@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Немецкие карточки</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root {
+    --ink: #1c1233;
+    --paper: #fffaf0;
+    --pink: #ff3d8b;
+    --amber: #ffb627;
+    --teal: #19d3c5;
+    --violet: #6a3dff;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    font-family: "Trebuchet MS", "Segoe UI", system-ui, sans-serif;
+    color: #fff;
+    background: #140a2b;
+    overflow: hidden;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 20px 16px calc(20px + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* ---------- Фон: цвет по краям, тишина в центре ---------- */
+  :root { --h: 0; }
+  .bg { position: fixed; inset: 0; z-index: 0; overflow: hidden; background: #130828; }
+  /* тёмная «подушка» за карточкой, чтобы слово читалось на любом фоне */
+  .bg::after { content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(ellipse 85% 42% at 50% 48%, rgba(15,7,32,.92) 0%, rgba(15,7,32,.6) 55%, transparent 100%); }
+  .blob { position: absolute; border-radius: 50%; filter: blur(55px); opacity: .55;
+    animation: drift 32s ease-in-out infinite alternate;
+    transition: background-color 2s ease, opacity .6s; }
+  .b1 { width: 340px; height: 340px; top: -110px;  left: -110px;  background: hsl(calc(var(--h) + 330), 95%, 58%); }
+  .b2 { width: 360px; height: 360px; bottom: -120px; right: -120px; background: hsl(calc(var(--h) + 175), 90%, 50%); animation-delay: -9s; }
+  .b3 { width: 280px; height: 280px; top: -90px;  right: -110px; background: hsl(calc(var(--h) + 40), 100%, 58%); animation-delay: -17s; }
+  .b4 { width: 300px; height: 300px; bottom: -110px; left: -120px; background: hsl(calc(var(--h) + 260), 95%, 62%); animation-delay: -5s; }
+  @keyframes drift {
+    from { transform: translate(0, 0) scale(1); }
+    to   { transform: translate(40px, 30px) scale(1.2); }
+  }
+  /* немецкие буквы плывут только вдоль краёв, не за карточкой */
+  .letter { position: absolute; bottom: -60px; font-weight: 900; color: rgba(255,255,255,.07);
+    animation: rise linear infinite; user-select: none; }
+  @keyframes rise { to { transform: translateY(-125vh) rotate(25deg); } }
+  /* яркий режим: насыщеннее и быстрее */
+  body:not(.calm) .blob { opacity: .85; animation-duration: 14s; }
+  body:not(.calm) .letter { color: rgba(255,255,255,.14); }
+  .tools { position: relative; z-index: 1; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+
+  #q { width: 100%; margin-top: 10px; padding: 12px 14px; border-radius: 16px; border: 2px solid rgba(255,255,255,.25);
+    background: rgba(20,10,43,.55); color: #fff; font-size: 16px; backdrop-filter: blur(8px); outline: none; }
+  #q::placeholder { color: rgba(255,255,255,.55); }
+  #results { margin-top: 8px; max-height: 34vh; overflow-y: auto; border-radius: 16px; background: rgba(20,10,43,.85); }
+  #results button { display: block; width: 100%; text-align: left; padding: 10px 14px; background: none; border: 0;
+    border-bottom: 1px solid rgba(255,255,255,.1); color: #fff; font-size: 15px; cursor: pointer; }
+  #results .none { padding: 10px 14px; opacity: .7; font-size: 15px; }
+  .stat { text-align: center; font-size: 13px; opacity: .8; margin-top: 8px; }
+
+  /* ---------- Layout ---------- */
+  header, main, nav { position: relative; z-index: 1; width: 100%; max-width: 440px; }
+  h1 { font-size: 26px; margin: 4px 0 14px; text-align: center; letter-spacing: .5px;
+    text-shadow: 0 3px 0 rgba(255,61,139,.55); }
+  select {
+    width: 100%; padding: 13px 14px; border-radius: 16px; border: 2px solid rgba(255,255,255,.25);
+    background: rgba(20,10,43,.55); color: #fff; font-size: 16px; backdrop-filter: blur(8px);
+    appearance: none; -webkit-appearance: none;
+  }
+  main { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 18px; }
+
+  /* ---------- Card ---------- */
+  .scene { width: 100%; height: 250px; perspective: 1200px; }
+  .card { position: relative; width: 100%; height: 100%; transform-style: preserve-3d;
+    transition: transform .55s cubic-bezier(.3,1.4,.5,1); cursor: pointer; }
+  .card.flipped { transform: rotateY(180deg); }
+  .card.enter { animation: pop .4s cubic-bezier(.3,1.5,.5,1); }
+  @keyframes pop { from { opacity: 0; transform: scale(.85) rotate(-3deg); } }
+  .face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden;
+    border-radius: 28px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 24px; text-align: center; box-shadow: 0 18px 0 -6px rgba(0,0,0,.28), 0 28px 50px rgba(0,0,0,.35); }
+  .front { background: var(--paper); color: var(--ink); border: 4px solid var(--ink); }
+  .back  { background: linear-gradient(135deg, var(--amber), var(--pink)); color: var(--ink);
+           border: 4px solid var(--ink); transform: rotateY(180deg); }
+  .word { font-size: clamp(34px, 11vw, 52px); font-weight: 900; line-height: 1.1; word-break: break-word; }
+  .hint { margin-top: 18px; font-size: 14px; opacity: .55; }
+
+  /* ---------- Controls ---------- */
+  nav { display: flex; align-items: center; gap: 12px; }
+  .btn { flex: 1; padding: 16px 0; font-size: 18px; font-weight: 800; color: var(--ink);
+    border: 3px solid var(--ink); border-radius: 18px; cursor: pointer;
+    box-shadow: 0 6px 0 var(--ink); transition: transform .08s, box-shadow .08s; }
+  .btn:active { transform: translateY(5px); box-shadow: 0 1px 0 var(--ink); }
+  .btn:disabled { opacity: .4; }
+  .prev { background: var(--teal); }
+  .next { background: var(--amber); }
+  .counter { min-width: 76px; text-align: center; font-weight: 800; font-size: 17px; }
+  .shuffle { position: relative; z-index: 1; margin-top: 14px; background: none; border: 2px dashed rgba(255,255,255,.4);
+    color: #fff; border-radius: 14px; padding: 8px 16px; font-size: 14px; cursor: pointer; }
+
+  @media (prefers-reduced-motion: reduce) { .blob, .letter, .card, .card.enter { animation: none; transition: none; } }
+</style>
+</head>
+<body>
+<div class="bg" id="bg">
+  <div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div><div class="blob b4"></div>
+</div>
+
+<header>
+  <h1>🇩🇪 Немецкие карточки</h1>
+  <select id="deck" aria-label="Набор слов"></select>
+  <input id="q" type="search" placeholder="🔍 Поиск: по-немецки или по-русски" autocomplete="off">
+  <div id="results" hidden></div>
+  <div id="stat" class="stat" hidden></div>
+</header>
+
+<main>
+  <div class="scene">
+    <div class="card" id="card" role="button" tabindex="0" aria-label="Перевернуть карточку">
+      <div class="face front"><div class="word" id="de"></div><div class="hint">Нажмите, чтобы увидеть перевод</div></div>
+      <div class="face back"><div class="word" id="ru"></div></div>
+    </div>
+  </div>
+  <nav>
+    <button class="btn prev" id="prev">← Назад</button>
+    <div class="counter" id="counter"></div>
+    <button class="btn next" id="next">Вперёд →</button>
+  </nav>
+  <div class="tools"><button class="shuffle" id="dirBtn"></button><button class="shuffle" id="shuffle">🔀 Перемешать</button><button class="shuffle" id="bgBtn"></button></div>
+</main>
+
+<script src="words.js"></script>
+<script>
+  // Слова из тетради. Формат строки: немецкое | перевод | категория (категорию можно не указывать)
+  const RAW = `
+fragen | спрашивать | Глаголы
+lieben | любить | Глаголы
+leben | жить | Глаголы
+heißen | называться | Глаголы
+ich | я | Местоимения
+du | ты | Местоимения
+er | он | Местоимения
+sie | она / они | Местоимения
+es | оно | Местоимения
+wir | мы | Местоимения
+ihr | вы | Местоимения
+Sie | Вы (вежливое) | Местоимения
+dich | тебя | Местоимения
+nicht | не | Наречия
+in | в | Предлоги
+lachen | смеяться | Глаголы
+gern (gerne) | люблю, нравиться, с удовольствием | Наречия
+gut | хорошо | Прилагательные
+fotografieren | фотографировать | Глаголы
+lernen | учить, учиться | Глаголы
+Ja | Да | Фразы и выражения
+Nein | Нет | Фразы и выражения
+mich | меня | Местоимения
+schön | красиво, красивый | Прилагательные
+tanzen | танцевать | Глаголы
+Tschüß | Пока | Фразы и выражения
+das Büro, -s | офис | Существительные
+Hallo | Привет, Здравствуйте | Фразы и выражения
+Guten Abend | Добрый вечер | Фразы и выражения
+machen | делать | Глаголы
+heute | сегодня | Наречия
+arbeiten | работать | Глаголы
+und | и | 
+antworten | отвечать | Глаголы
+Was | Что | Местоимения
+Wo | Где | Наречия
+Auch | Тоже | Наречия
+Wohnen | Жить, проживать | Глаголы
+Guten Morgen | Доброе утро | Фразы и выражения
+Guten Tag | Добрый день | Фразы и выражения
+Schönen guten Tag | Прекрасного хорошего дня | Фразы и выражения
+Moin | Привет (на севере) | Фразы и выражения
+Grüß Gott | Привет (на юге) | Фразы и выражения
+Auf Wiedersehen | До свидания | Фразы и выражения
+Auf Wiederhören | До свидания (по тел.) | Фразы и выражения
+Schönen Abend noch | Хорошего вечера | Фразы и выражения
+Schönes Wochenende | Хороших выходных | Фразы и выражения
+Gute Nacht | Спокойной ночи | Фразы и выражения
+Bis später | Увидимся (через некоторое время) | Фразы и выражения
+Bis bald | Увидимся скоро | Фразы и выражения
+Bis gleich | Увидимся (почти сразу) | Фразы и выражения
+Danke schön | Большое спасибо | Фразы и выражения
+Bitte schön | Пожалуйста | Фразы и выражения
+Vielen Dank | Большое спасибо | Фразы и выражения
+Entschuldigung | Извините | Фразы и выражения
+ich verstehe nicht | я не понимаю | Фразы и выражения
+ich verstehe Sie | я вас понимаю | Фразы и выражения
+Sprechen Sie Englisch? | Вы говорите по-английски? | Фразы и выражения
+froh | радостный | Прилагательные
+müde | уставший | Прилагательные
+noch | ещё | Наречия
+satt | сытый | Прилагательные
+fertig | готов | Прилагательные
+schon | уже | Наречия
+wie | сколько / как | Наречия
+fantastisch | фантастически | Прилагательные
+interessant | интересно | Прилагательные
+Das | Это | Местоимения
+schlecht | плохо | Прилагательные
+sehr | очень | Наречия
+Kind | ребёнок | Существительные
+Mann | мужчина | Существительные
+Frau | женщина | Существительные
+Buch | книга | Существительные
+Eimer | ведро | Существительные
+Tasse | кружка / чашка | Существительные
+wer | кто | Местоимения
+Optimismus | оптимизм | Существительные
+Tourismus | туризм | Существительные
+Mädchen | девушка | Существительные
+Junge | мальчик | Существительные
+Brot | хлеб | Существительные
+Wohnung | квартира | Существительные
+Zeitung | газета | Существительные
+Tee | чай | Существительные
+Tisch | стол | Существительные
+Bäckerei | пекарня | Существительные
+Hund | собака | Существительные
+Katze | кошка | Существительные
+Kaffee | кофе | Существительные
+mein / meine | мой / моя | Местоимения
+Mutter / Mama | мать / мама | Существительные
+Hand | рука | Существительные
+alle zusammen | все вместе | Фразы и выражения
+Hallo alle zusammen! | Привет всем! | Фразы и выражения
+dein / deine | твой | Местоимения
+kein / keine | никакой (отрицание) | Местоимения
+Lehrer | учитель | Существительные
+Lehrerin | учительница | Существительные
+spricht | говорить | Глаголы
+woher | откуда | Наречия
+kommen | приходить, приезжать | Глаголы
+aus | из | Предлоги
+das Leben | жизнь | Существительные
+von | от, о | Предлоги
+Beruf | профессия | Существительные
+Herr | господин | Существительные
+die Zeit | время | Существительные
+viel | много | Наречия
+der Hunger | голод | Существительные
+der Durst | жажда | Существительные
+viel zu tun | много дел | Фразы и выражения
+nichts | ничего / ничто | Местоимения
+die Angst | страх | Существительные
+Freizeit | свободное время | Существительные
+Freund | друг | Существительные
+Niemand | Никто | Местоимения
+Warum | Почему | Наречия
+da | там, тут | Наречия
+Straße | улица | Существительные
+Stadt | город | Существительные
+mögen | нравиться, любить | Глаголы
+spielen | играть | Глаголы
+kaufen | покупать | Глаголы
+kennen | знать кого-то / быть знакомым | Глаголы
+Wen | кого | Местоимения
+mit | с; при помощи | Предлоги
+bei | у, при, во время, у кого-то | Предлоги
+zu | к, в | Предлоги
+für | для, за | Предлоги
+ohne | без | Предлоги
+spazieren | гулять | Глаголы
+wohin | куда | Наречия
+die Schule | школа | Существительные
+der Laden | магазин | Существительные
+zur / auf Arbeit | на работу | Фразы и выражения
+nach Hause | домой | Фразы и выражения
+mir | мне | Местоимения
+Bruder | брат | Существительные
+verheiratet | женатый | Прилагательные
+geschieden | разведённый | Прилагательные
+ledig | холостой, незамужняя | Прилагательные
+jetzt | сейчас | Наречия
+Aber | Но | 
+oft | часто | Наречия
+oder | или | 
+früh | рано | Наречия
+danach | после этого | Наречия
+frei | свободен | Прилагательные
+Wann | Когда | Наречия
+Montag | Понедельник | Существительные
+Dienstag | Вторник | Существительные
+Mittwoch | Среда | Существительные
+Donnerstag | Четверг | Существительные
+Freitag | Пятница | Существительные
+Samstag / Sonnabend | Суббота | Существительные
+Sonntag | Воскресенье | Существительные
+jeden | каждый | Местоимения
+die Woche | неделя | Существительные
+die Uhren | часы | Существительные
+rund um die Uhr | круглосуточно | Фразы и выражения
+die Stunde | час | Существительные
+die Leute | люди | Существительные
+helfen | помогать | Глаголы
+geben | давать; передавать | Глаголы
+die Blume | цветок | Существительные
+die Hexe | ведьма | Существительные
+schenken | дарить, делать подарок | Глаголы
+bis | до | Предлоги
+durch | через | Предлоги
+gegen | против | Предлоги
+um | вокруг | Предлоги
+nach | после | Предлоги
+langweilig | скучный, нудный / скучно | Прилагательные
+bleiben | оставаться | Глаголы
+achtung | внимание! (осторожно) / уважение (почтение) | Фразы и выражения
+die Wand | стена | Существительные
+herum | вокруг, кругом, около | Наречия
+ab | с (будущее) | Предлоги
+seit | с (прошлое) | Предлоги
+außer | кроме | Предлоги
+gegenüber | напротив | Предлоги
+können | мочь, уметь | Глаголы
+wollen | хотеть, желать, намереваться | Глаголы
+der Unterricht | урок, занятие | Существительные
+Französisch | французский | Прилагательные
+die Brille | очки | Существительные
+die Reise | путешествие | Существительные
+immer | всегда | Наречия
+überhaupt | вообще, совсем | Наречия
+nehmen | брать; взять | Глаголы
+endlich | наконец | Наречия
+lieber | лучше (предпочтительнее) | Наречия
+die Lebensmittel | продукты | Существительные
+stehen | стоять | Глаголы
+rufen | звать | Глаголы
+manchmal | иногда, порой | Наречия
+holen | приносить, приводить | Глаголы
+natürlich | конечно, естественно | Наречия
+aufmachen | открывать | Глаголы
+zumachen | закрыть | Глаголы
+das Fenster | окно, витрина | Существительные
+die Tür | дверь | Существительные
+anfangen | начинать | Глаголы
+öffnen | открывать, отворять | Глаголы
+schließen | закрывать, затворять | Глаголы
+beginnen | начинать, начинаться | Глаголы
+`;
+  const seen = new Set();
+  const ALL = (RAW + "\n" + (window.EXTRA || "")).split("\n").filter(l => l.trim()).map(l => {
+    const [de, ru, cat] = l.split(" | ");
+    return { de: de.trim(), ru: ru.trim(), cat: (cat || "").trim() };
+  }).filter(w => !seen.has(w.de) && seen.add(w.de));
+
+  // Наборы в выпадающем списке. Пустые категории скрываются сами.
+  const CATEGORIES = ["Существительные", "Прилагательные", "Глаголы", "Местоимения",
+                      "Наречия", "Предлоги", "Числительные", "Фразы и выражения"];
+  const DECKS = { "📚 Все слова (уникальные)": ALL };
+  CATEGORIES.forEach(c => {
+    const list = ALL.filter(w => w.cat === c);
+    if (list.length) DECKS[c + " (" + list.length + ")"] = list;
+  });
+
+  const tg = window.Telegram && Telegram.WebApp;
+  if (tg) { tg.ready(); tg.expand(); try { tg.setHeaderColor("#2a1259"); tg.setBackgroundColor("#140a2b"); } catch (e) {} }
+
+  const $ = id => document.getElementById(id);
+  const card = $("card"), deckSel = $("deck");
+  let words = [], i = 0;
+  let rev = false; // false: немецкий → русский, true: русский → немецкий
+  try { rev = localStorage.getItem("dir") === "ru"; } catch (e) {}
+
+  Object.keys(DECKS).forEach(name => deckSel.add(new Option(name, name)));
+
+  function loadDeck() { words = DECKS[deckSel.value].slice(); i = 0; render(); }
+
+  function render() {
+    card.classList.remove("flipped", "enter");
+    void card.offsetWidth;
+    card.classList.add("enter");
+    const front = rev ? words[i].ru : words[i].de;
+    const back = rev ? words[i].de : words[i].ru;
+    $("de").textContent = front;
+    $("ru").textContent = back;
+    [$("de"), $("ru")].forEach(el => {
+      const n = el.textContent.length;
+      el.style.fontSize = n > 40 ? "22px" : n > 24 ? "28px" : n > 14 ? "36px" : "";
+    });
+    document.documentElement.style.setProperty("--h", (i * 7) % 360);
+    $("counter").textContent = (i + 1) + " / " + words.length;
+    $("prev").disabled = i === 0;
+    $("next").disabled = i === words.length - 1;
+  }
+
+  function go(step) {
+    const n = i + step;
+    if (n < 0 || n >= words.length) return;
+    i = n; render();
+    if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred("light");
+  }
+  const flip = () => card.classList.toggle("flipped");
+
+  $("prev").onclick = () => go(-1);
+  $("next").onclick = () => go(1);
+  card.onclick = flip;
+  deckSel.onchange = loadDeck;
+  $("shuffle").onclick = () => {
+    for (let k = words.length - 1; k > 0; k--) { const j = Math.floor(Math.random() * (k + 1)); [words[k], words[j]] = [words[j], words[k]]; }
+    i = 0; render();
+  };
+  document.addEventListener("keydown", e => {
+    if (e.key === "ArrowRight") go(1);
+    else if (e.key === "ArrowLeft") go(-1);
+    else if (e.key === " " || e.key === "Enter") { e.preventDefault(); flip(); }
+  });
+
+  // Свайп влево/вправо
+  let x0 = null;
+  card.addEventListener("touchstart", e => { x0 = e.touches[0].clientX; }, { passive: true });
+  card.addEventListener("touchend", e => {
+    if (x0 === null) return;
+    const dx = e.changedTouches[0].clientX - x0;
+    if (Math.abs(dx) > 60) { go(dx < 0 ? 1 : -1); card._swiped = true; setTimeout(() => card._swiped = false, 50); }
+    x0 = null;
+  });
+  card.addEventListener("click", e => { if (card._swiped) { e.stopImmediatePropagation(); } }, true);
+
+  // Немецкие буквы на фоне: только в боковых полях
+  const chars = ["ä", "ö", "ü", "ß", "Ä", "Ö", "Ü", "der", "die", "das", "ja", "nein"];
+  for (let k = 0; k < 12; k++) {
+    const s = document.createElement("span");
+    s.className = "letter";
+    s.textContent = chars[k % chars.length];
+    const left = k % 2 ? Math.random() * 9 : 90 + Math.random() * 6;
+    s.style.left = left + "%";
+    s.style.fontSize = 26 + Math.random() * 26 + "px";
+    s.style.animationDuration = 40 + Math.random() * 30 + "s";
+    s.style.animationDelay = -Math.random() * 60 + "s";
+    $("bg").appendChild(s);
+  }
+
+  // Переключатель фона: спокойный (по умолчанию) / яркий
+  let vivid = false;
+  try { vivid = localStorage.getItem("bg") === "vivid"; } catch (e) {}
+  function applyBg() {
+    document.body.classList.toggle("calm", !vivid);
+    $("bgBtn").textContent = vivid ? "🌙 Спокойный фон" : "✨ Яркий фон";
+  }
+  $("bgBtn").onclick = () => {
+    vivid = !vivid;
+    try { localStorage.setItem("bg", vivid ? "vivid" : "calm"); } catch (e) {}
+    applyBg();
+  };
+  applyBg();
+
+  // Поиск по немецкому и русскому (ä=a, ö=o, ü=u, ß=ss)
+  const norm = t => t.toLowerCase().replace(/ä/g, "a").replace(/ö/g, "o").replace(/ü/g, "u").replace(/ß/g, "ss").replace(/ё/g, "е");
+  const resBox = $("results");
+  $("q").oninput = () => {
+    const q = norm($("q").value.trim());
+    resBox.innerHTML = "";
+    if (!q) { resBox.hidden = true; return; }
+    const found = ALL.filter(w => norm(w.de).includes(q) || norm(w.ru).includes(q));
+    resBox.hidden = false;
+    if (!found.length) { resBox.innerHTML = '<div class="none">Ничего не найдено</div>'; return; }
+    found.slice(0, 30).forEach((w, idx) => {
+      const b = document.createElement("button");
+      b.textContent = w.de + " — " + w.ru;
+      b.onclick = () => { words = found; i = idx; resBox.hidden = true; $("q").value = ""; render(); card.classList.add("flipped"); };
+      resBox.appendChild(b);
+    });
+  };
+  deckSel.addEventListener("change", () => { $("q").value = ""; resBox.hidden = true; });
+
+  // Счётчик пользователей (см. инструкцию): вставь ссылку Apps Script и свой Telegram ID
+  const STATS_URL = "";
+  const OWNER_ID = 0;
+  const me = tg && tg.initDataUnsafe && tg.initDataUnsafe.user;
+  if (STATS_URL && me) {
+    fetch(STATS_URL + "?uid=" + me.id).then(r => r.text()).then(t => {
+      if (me.id === OWNER_ID) { $("stat").textContent = "👥 Пользователей: " + t; $("stat").hidden = false; }
+    }).catch(() => {});
+  }
+
+  // Переключатель направления: 🇩🇪 → 🇷🇺 / 🇷🇺 → 🇩🇪
+  function applyDir() { $("dirBtn").textContent = rev ? "🇷🇺 → 🇩🇪" : "🇩🇪 → 🇷🇺"; }
+  $("dirBtn").onclick = () => {
+    rev = !rev;
+    try { localStorage.setItem("dir", rev ? "ru" : "de"); } catch (e) {}
+    applyDir();
+    render();
+  };
+  applyDir();
+
+  loadDeck();
+</script>
+</body>
+</html>
