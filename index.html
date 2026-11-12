@@ -1340,6 +1340,41 @@ const isLocked = k => LVKEY[k] && !unlocked(LVKEY[k]);
 {id:"c1-1",l:"C1",t:"Konjunktiv I: косвенная речь",b:"<p>Для передачи чужих слов (СМИ, официальный стиль): Er sagt, er <b>sei</b> krank. Sie sagt, sie <b>habe</b> keine Zeit. Er sagt, er <b>komme</b> morgen.</p><p>Если форма совпадает с Indikativ, используют Konjunktiv II.</p>",q:[["Er sagte, er ___ müde.",["sei","ist","wäre"],0],["Sie sagt, sie ___ keine Zeit.",["habe","hat","hätte"],0]]},
 {id:"c1-2",l:"C1",t:"Funktionsverbgefüge: устойчивые сочетания",b:"<p>Существительное + глагол, типично для делового стиля: eine Entscheidung <b>treffen</b>, in Betracht <b>ziehen</b>, zur Verfügung <b>stellen</b>, Rücksicht <b>nehmen</b>. Запоминай глагол вместе со словом.</p>",q:[["eine Entscheidung ___",["treffen","machen","geben"],0],["zur Verfügung ___",["stellen","legen","setzen"],0]]}
 ];
+  const XQ = {
+    "a1-1": [["Wir ___ Freunde.", ["sind", "seid", "bin"], 0], ["Du ___ Zeit.", ["hast", "hat", "habt"], 0]],
+    "a1-2": [["___ Tisch", ["der", "die", "das"], 0], ["Mehrzahl: ___ Bücher", ["der", "die", "das"], 1]],
+    "a1-3": [["___ du Deutsch? (вопрос без слова-вопроса)", ["Lernst", "Du lernst", "Lernt"], 0]],
+    "a1-4": [["Das ist ___ gut.", ["nicht", "kein"], 0]],
+    "a2-1": [["Ich habe das Buch ___.", ["gelesen", "lesen", "geliest"], 0]],
+    "a2-2": [["Er ___ Auto fahren.", ["kann", "kannst", "können"], 0]],
+    "a2-3": [["Ich gehe mit ___ Freund ins Kino.", ["dem", "den", "der"], 0]],
+    "b1-1": [["Ich komme nicht, ___ ich krank bin.", ["weil", "dass", "ob"], 0]],
+    "b1-2": [["Wir ___ früher in Taschkent.", ["wohnten", "wohnen", "gewohnt"], 0]],
+    "b1-3": [["Die Kinder, ___ dort spielen, sind klein.", ["die", "der", "das"], 0]],
+    "b2-1": [["Ich ___ gern mehr Zeit.", ["hätte", "habe", "hatte"], 0]],
+    "b2-2": [["Das Haus ___ 1990 gebaut.", ["wurde", "wird", "ist"], 0]],
+    "b2-3": [["während ___ Sommers", ["des", "dem", "der"], 0]],
+    "c1-1": [["Er sagt, er ___ morgen.", ["komme", "kommt", "käme"], 0]],
+    "c1-2": [["Rücksicht ___", ["nehmen", "geben", "haben"], 0]]
+  };
+  GR.forEach(x => x.q.push(...(XQ[x.id] || [])));
+  GR.push(
+{id:"a1-5",l:"A1",t:"Спряжение глаголов в настоящем времени",b:"<p>Основа + окончание: ich lern<b>e</b>, du lern<b>st</b>, er/sie/es lern<b>t</b>, wir lern<b>en</b>, ihr lern<b>t</b>, sie/Sie lern<b>en</b>.</p><p>Если основа на -t/-d, добавляется -e-: du arbeit<b>e</b>st, er arbeit<b>e</b>t.</p>",q:[["Du ___ Deutsch.",["lernst","lerne","lernt"],0],["Wir ___ in Taschkent.",["wohnen","wohnt","wohne"],0],["Er ___ jeden Tag.",["arbeitet","arbeitt","arbeiten"],0],["Ihr ___ gut.",["spielt","spielen","spiele"],0]]},
+{id:"a1-6",l:"A1",t:"Вопросительные слова (W-Fragen)",b:"<p><b>wer</b> кто, <b>was</b> что, <b>wo</b> где, <b>woher</b> откуда, <b>wohin</b> куда, <b>wann</b> когда, <b>warum</b> почему, <b>wie</b> как. Глагол стоит сразу после вопросительного слова: Wo wohnst du?</p>",q:[["___ wohnst du? — In Taschkent.",["Wo","Woher","Wohin"],0],["___ kommst du? — Aus Usbekistan.",["Woher","Wo","Wann"],0],["___ ist das? — Das ist ein Buch.",["Was","Wer","Wie"],0],["___ heißt du?",["Wie","Wo","Wer"],0]]},
+{id:"a1-7",l:"A1",t:"Притяжательные местоимения",b:"<p><b>mein</b> мой, <b>dein</b> твой, <b>sein</b> его, <b>ihr</b> её, <b>unser</b> наш, <b>euer</b> ваш. Для женского рода и множественного числа окончание -e: meine Mutter, deine Eltern.</p>",q:[["Das ist ___ Mutter. (моя)",["meine","mein","meinen"],0],["___ Bruder arbeitet hier. (твой)",["Dein","Deine","Deinen"],0],["Das ist ___ Haus. (наш)",["unser","unsere","uns"],0],["Wo ist ___ Tasche? (её)",["ihre","ihr","sein"],0]]},
+{id:"a2-4",l:"A2",t:"Глаголы с отделяемой приставкой",b:"<p>aufstehen, anrufen, einkaufen: приставка уходит в конец: Ich <b>stehe</b> um 7 Uhr <b>auf</b>. Er <b>ruft</b> mich <b>an</b>. В Perfekt: -ge- между приставкой и основой: aufgestanden, angerufen.</p>",q:[["Выбери верно:",["Ich stehe um 7 Uhr auf.","Ich aufstehe um 7 Uhr.","Ich stehe auf um 7 Uhr."],0],["Выбери верно:",["Er ruft mich an.","Er anruft mich.","Er mich ruft an."],0],["Sie kauft im Supermarkt ___.",["ein","an","auf"],0],["Ich habe ihn gestern ___.",["angerufen","anrufen","geanrufen"],0]]},
+{id:"a2-5",l:"A2",t:"Предлоги места: Wo? и Wohin?",b:"<p>Предлоги in, auf, an, unter, neben, über, vor, hinter + <b>Dativ</b> на вопрос Wo? (Ich bin in <b>der</b> Küche) и + <b>Akkusativ</b> на вопрос Wohin? (Ich gehe in <b>die</b> Küche).</p>",q:[["Ich bin in ___ Küche. (Wo?)",["der","die","den"],0],["Ich gehe in ___ Küche. (Wohin?)",["die","der","dem"],0],["Das Bild hängt an ___ Wand.",["der","die","dem"],0],["Ich stelle das Glas auf ___ Tisch.",["den","dem","der"],0]]},
+{id:"a2-6",l:"A2",t:"Степени сравнения прилагательных",b:"<p>schön – <b>schöner</b> – am <b>schönsten</b>. Часто с умлаутом: groß – größer – am größten. Исключения: gut – <b>besser</b> – am <b>besten</b>, viel – <b>mehr</b> – am <b>meisten</b>. Сравнение: <b>als</b> (чем), <b>so ... wie</b> (так же, как).</p>",q:[["Er ist ___ als ich.",["größer","groß","am größten"],0],["gut → ___",["besser","guter","mehr"],0],["Das ist der ___ Film. (самый красивый)",["schönste","schöner","schön"],0],["Berlin ist größer ___ Hamburg.",["als","wie","dass"],0]]},
+{id:"b1-4",l:"B1",t:"Склонение прилагательных после артикля",b:"<p>После der/die/das: <b>-e</b> в Nominativ (и Akkusativ ж., ср.), везде остальное <b>-en</b>. der große Mann, die nette Frau, das kleine Kind; Ich sehe den großen Mann; mit dem kleinen Kind.</p>",q:[["der ___ Mann",["große","groß","großen"],0],["Ich sehe den ___ Mann.",["großen","große","groß"],0],["die ___ Frau",["nette","netten","nett"],0],["mit dem ___ Kind",["kleinen","kleine","klein"],0]]},
+{id:"b1-5",l:"B1",t:"Инфинитив с zu и um ... zu",b:"<p>Инфинитивный оборот: Ich habe keine Lust, früh <b>aufzustehen</b>. Цель: <b>um ... zu</b> + инфинитив: Ich lerne Deutsch, <b>um</b> in Deutschland <b>zu</b> arbeiten. У отделяемых глаголов zu встаёт между приставкой и основой.</p>",q:[["Ich lerne, ___ in Deutschland zu arbeiten.",["um","für","damit"],0],["Ich habe Zeit, dich ___ besuchen.",["zu","um","für"],0],["Er geht in die Stadt, um ein Buch ___ kaufen.",["zu","zum","für"],0],["Ich habe keine Lust, früh ___.",["aufzustehen","zu aufstehen","aufstehen zu"],0]]},
+{id:"b1-6",l:"B1",t:"Возвратные глаголы",b:"<p>sich freuen, sich erinnern, sich ärgern, sich interessieren: ich freue <b>mich</b>, du freust <b>dich</b>, er freut <b>sich</b>, wir freuen <b>uns</b>, ihr freut <b>euch</b>, sie freuen <b>sich</b>.</p>",q:[["Ich freue ___ auf den Urlaub.",["mich","dich","sich"],0],["Du ärgerst ___.",["dich","mich","sich"],0],["Er interessiert ___ für Musik.",["sich","ihn","mich"],0],["Wir treffen ___ morgen.",["uns","euch","sich"],0]]},
+{id:"b2-4",l:"B2",t:"Двойные союзы",b:"<p><b>entweder ... oder</b> (или ... или), <b>sowohl ... als auch</b> (и ... и), <b>weder ... noch</b> (ни ... ни), <b>nicht nur ... sondern auch</b> (не только ... но и), <b>je ... desto</b> (чем ... тем).</p>",q:[["Er spricht ___ Deutsch ___ Englisch.",["sowohl ... als auch","entweder ... oder","weder ... noch"],0],["Ich habe ___ Zeit ___ Geld.",["weder ... noch","sowohl ... als auch","entweder ... oder"],0],["Je mehr ich lerne, ___ besser verstehe ich.",["desto","dann","so"],0],["Nicht nur ich, ___ auch er kommt.",["sondern","aber","oder"],0]]},
+{id:"b2-5",l:"B2",t:"Придаточное в начале предложения",b:"<p>Если придаточное стоит <b>первым</b>, то в главном предложении глагол идёт сразу после запятой (инверсия): Weil er müde war, <b>ging er</b> früh ins Bett. Wenn es regnet, <b>bleibe ich</b> zu Hause.</p>",q:[["Weil er müde war, ...",["ging er früh ins Bett.","er ging früh ins Bett."],0],["Wenn es regnet, ...",["bleibe ich zu Hause.","ich bleibe zu Hause."],0],["Obwohl ich krank bin, ...",["gehe ich zur Arbeit.","ich gehe zur Arbeit."],0],["Dass er kommt, ...",["freut mich.","ich freue mich."],0]]},
+{id:"b2-6",l:"B2",t:"Словообразование: существительные",b:"<p>Из глаголов: entscheiden → die Entscheidung, lösen → die Lösung (-ung). Из прилагательных: frei → die Freiheit, möglich → die Möglichkeit (-heit, -keit). Все эти существительные женского рода (die).</p>",q:[["Существительное от «entscheiden»:",["die Entscheidung","das Entscheiden","der Entscheid"],0],["frei → ___",["die Freiheit","die Freiung","das Frei"],0],["möglich → ___",["die Möglichkeit","die Möglichung","das Möglich"],0],["lösen → ___",["die Lösung","die Löschung","das Lösen"],0]]},
+{id:"c1-3",l:"C1",t:"Причастные обороты (Partizipialattribute)",b:"<p>Partizip II = «сделанный»: der gestern <b>gekaufte</b> Wagen (= der Wagen, der gestern gekauft wurde). Partizip I = «делающий»: die <b>lesenden</b> Kinder (= die Kinder, die lesen). Причастие склоняется как прилагательное.</p>",q:[["Купленная вчера машина:",["der gestern gekaufte Wagen","der gestern kaufte Wagen","der gestern kaufende Wagen"],0],["Читающие дети:",["die lesenden Kinder","die gelesenen Kinder","die lesen Kinder"],0],["Открытое окно:",["das geöffnete Fenster","das öffnende Fenster","das öffnet Fenster"],0]]},
+{id:"c1-4",l:"C1",t:"Модальные частицы",b:"<p>Придают речи оттенок: <b>doch</b> (мягко настаивает): Komm doch mal vorbei! <b>ja</b> (ведь, это известно): Das ist ja klar! <b>eben/halt</b> (ничего не поделаешь): Das ist eben so. <b>mal</b> смягчает просьбу.</p>",q:[["Komm ___ mal vorbei! (мягкое побуждение)",["doch","eben","ja"],0],["«Das ist eben so.» значит:",["Ничего не поделаешь","Ровно так","Вчера было так"],0],["Das ist ___ klar! (ведь это очевидно)",["ja","mal","halt"],0]]},
+{id:"c1-5",l:"C1",t:"Konjunktiv II в прошедшем",b:"<p>О несбывшемся: <b>hätte/wäre + Partizip II</b>. Wenn ich das gewusst <b>hätte</b>, <b>wäre</b> ich gekommen. Ich <b>hätte</b> das nie getan.</p>",q:[["Wenn ich das gewusst ___, wäre ich gekommen.",["hätte","habe","hatte"],0],["Wenn er Zeit gehabt hätte, ___ er gekommen.",["wäre","hätte","war"],0],["Ich ___ das nie getan.",["hätte","bin","habe"],0]]}
+  );
   let gp = new Set();
   try { gp = new Set(JSON.parse(localStorage.getItem("gp") || "[]")); } catch (e) {}
   function refreshScreens() { render(); if (!$("gr").hidden) renderGr(); if (!$("me").hidden) renderMe(); }
@@ -1347,9 +1382,9 @@ const isLocked = k => LVKEY[k] && !unlocked(LVKEY[k]);
     let k = 0, ok = 0;
     const next = () => {
       if (k >= items.length) {
-        const all = ok === items.length;
+        const all = ok >= Math.ceil(items.length * 0.8);
         if (pass && all) { gp.add(pass); try { localStorage.setItem("gp", JSON.stringify([...gp])); } catch (e) {} }
-        openModal("<h2>" + (all ? "🏆" : "📝") + " " + title + "</h2><p>Правильно: " + ok + " из " + items.length + "</p>" + (pass ? (all ? "<p>✅ Урок пройден!</p>" : "<p>Чтобы пройти урок, нужно ответить верно на все вопросы. Перечитай правило и попробуй ещё раз.</p>") : ""));
+        openModal("<h2>" + (all ? "🏆" : "📝") + " " + title + "</h2><p>Правильно: " + ok + " из " + items.length + "</p>" + (pass ? (all ? "<p>✅ Урок пройден!</p>" : "<p>Для зачёта нужно не менее 80% верных ответов. Перечитай правило и попробуй ещё раз.</p>") : ""));
         return;
       }
       const [q, o, a] = items[k], order = o.map((t, i) => i).sort(() => Math.random() - 0.5);
@@ -1374,8 +1409,8 @@ const isLocked = k => LVKEY[k] && !unlocked(LVKEY[k]);
   function renderGr() {
     const box = $("gr"), done = GR.filter(x => gp.has(x.id)).length;
     box.innerHTML = "<h1>📘 Грамматика</h1><p>Пройдено уроков: <b>" + done + " из " + GR.length + '</b></p><div class="pb"><i style="width:' + done * 100 / GR.length + '%"></i></div>';
-    const t = document.createElement("button"); t.className = "opt"; t.textContent = "🎯 Общий тест по грамматике (10 вопросов)";
-    t.onclick = () => gQuiz(GR.filter(x => unlocked(x.l)).flatMap(x => x.q).sort(() => Math.random() - 0.5).slice(0, 10), "Тест по грамматике", null);
+    const t = document.createElement("button"); t.className = "opt"; t.textContent = "🎯 Общий тест по грамматике (15 вопросов)";
+    t.onclick = () => gQuiz(GR.filter(x => unlocked(x.l)).flatMap(x => x.q).sort(() => Math.random() - 0.5).slice(0, 15), "Тест по грамматике", null);
     box.appendChild(t);
     LEVELS.forEach(([l, e, n]) => {
       const h = document.createElement("p"); h.innerHTML = "<b>" + e + " " + l + " · " + n + "</b>"; box.appendChild(h);
