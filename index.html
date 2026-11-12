@@ -115,6 +115,8 @@
   .opt { display: block; width: 100%; margin: 8px 0; padding: 13px; font-size: 17px; font-weight: 700; border-radius: 14px;
     border: 2px solid rgba(255,255,255,.3); background: rgba(255,255,255,.08); color: #fff; cursor: pointer; }
   .opt.ok { background: #1f9d55; border-color: #3ddc84; } .opt.bad { background: #b3263e; border-color: #ff5a73; }
+  #bar { height: 8px; border-radius: 8px; background: rgba(255,255,255,.15); margin-top: 6px; overflow: hidden; }
+  #fill { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #19d3c5, #ffb627, #ff3d8b); transition: width .5s; }
   @media (prefers-reduced-motion: reduce) { .blob, .letter, .card, .card.enter { animation: none; transition: none; } }
 </style>
 </head>
@@ -130,6 +132,7 @@
   <div id="results" hidden></div>
   <div id="stat" class="stat" hidden></div>
   <div id="prog" class="stat"></div>
+  <div id="bar"><i id="fill"></i></div>
 </header>
 
 <main>
@@ -759,15 +762,332 @@ Wie bitte? | Как, простите? | Фразы и выражения
   try { known = new Set(JSON.parse(localStorage.getItem("known") || "[]")); } catch (e) {}
   const ART = { der: "#3b82f6", die: "#ff4d6d", das: "#22c55e" };
   const START = new Set(("Hallo|Guten Morgen|Guten Tag|Guten Abend|Gute Nacht|Tschüß|Auf Wiedersehen|Danke schön|Bitte schön|Entschuldigung|Ja|Nein|ich|du|er|sie|es|wir|ihr|Sie|heißen|Wohnen|kommen|lernen|arbeiten|machen|gut|schlecht|sehr|Auch|und|Aber|nicht|Was|Wo|wer|Warum|Wann|ich verstehe nicht|ich verstehe Sie|Sprechen Sie Englisch?|heute|jetzt|null|eins|zwei|drei|vier|fünf|sechs|sieben|acht|neun|zehn").split("|"));
-  const DECKS = {
-    "📚 Все слова (уникальные)": ALL,
-    "🌱 Старт для нуля": ALL.filter(w => START.has(w.de)),
-    "🔁 Не выученные": () => { const l = ALL.filter(w => !known.has(w.de)); return l.length ? l : [{ de: "🎉 Всё выучено!", ru: "Отличная работа!", cat: "" }]; }
-  };
-  CATEGORIES.forEach(c => {
-    const list = ALL.filter(w => w.cat === c);
-    if (list.length) DECKS[c + " (" + list.length + ")"] = list;
+  // ===== Уровни открываются по очереди: выучи 80% слов уровня, чтобы открыть следующий =====
+  const UNLOCK = 0.8;
+  const CODES = ["GERMAN-VIP-1"]; // секретный код владельца: впиши его в строку поиска, и откроются все уровни
+  let premium = false;
+  try { premium = localStorage.getItem("premium") === "1"; } catch (e) {}
+  let st = { n: 0, day: "", c: 0 };
+  try { st = Object.assign(st, JSON.parse(localStorage.getItem("st") || "{}")); } catch (e) {}
+
+  // Уровни: A1 — тетрадь и начальные слова, A2 — слова из PDF Goethe A2, B1–C1 — продвинутые
+  const iA = ALL.findIndex(w => w.de === "blau"), iB = ALL.findIndex(w => w.de === "die Tochter");
+  ALL.forEach((w, k) => { w.lvl = k >= iA && k <= iB ? "A2" : "A1"; });
+  `die Erfahrung|опыт|B1
+die Entscheidung|решение|B1
+die Umwelt|окружающая среда|B1
+die Meinung|мнение|B1
+die Gesellschaft|общество|B1
+der Vorschlag|предложение|B1
+die Bewerbung|заявка, резюме|B1
+die Zukunft|будущее|B1
+erreichen|достигать|B1
+verbessern|улучшать|B1
+vorhaben|намереваться|B1
+sich entscheiden|принять решение|B1
+die Voraussetzung|предпосылка|B2
+die Auswirkung|последствие|B2
+die Verantwortung|ответственность|B2
+die Herausforderung|вызов, трудная задача|B2
+die Entwicklung|развитие|B2
+der Standpunkt|точка зрения|B2
+beeinflussen|влиять|B2
+verhandeln|вести переговоры|B2
+bewältigen|справляться|B2
+nachhaltig|устойчивый|B2
+zuverlässig|надёжный|B2
+erforderlich|необходимый|B2
+die Beharrlichkeit|упорство|C1
+die Gelassenheit|невозмутимость|C1
+die Schlagfertigkeit|находчивость|C1
+der Zwiespalt|раздвоенность|C1
+das Fingerspitzengefühl|тонкое чутьё, такт|C1
+hinterfragen|ставить под сомнение|C1
+nachvollziehen|понять, проникнуться|C1
+verwerfen|отвергать|C1
+unabdingbar|непременный|C1
+anspruchsvoll|требовательный, сложный|C1
+vorausschauend|дальновидный|C1
+ausschlaggebend|решающий|C1
+der Urlaub|отпуск|A2
+die Ferien|каникулы|A2
+der Koffer|чемодан|A2
+der Reisepass|загранпаспорт|A2
+das Gleis|путь, платформа|A2
+die Abfahrt|отправление|A2
+die Verspätung|опоздание|A2
+der Termin|встреча, запись на приём|A2
+das Medikament|лекарство|A2
+die Schmerzen|боль|A2
+das Fieber|температура, жар|A2
+der Husten|кашель|A2
+die Erkältung|простуда|A2
+der Zahn|зуб|A2
+der Rücken|спина|A2
+der Preis|цена|A2
+die Kasse|касса|A2
+die Größe|размер, величина|A2
+die Firma|фирма|A2
+der Chef|начальник|A2
+der Kollege|коллега|A2
+das Gehalt|зарплата|A2
+der Vertrag|договор|A2
+die Besprechung|совещание|A2
+die Prüfung|экзамен|A2
+der Kurs|курс|A2
+der Fehler|ошибка|A2
+die Übung|упражнение|A2
+das Wörterbuch|словарь|A2
+der Satz|предложение|A2
+das Wort|слово|A2
+die Miete|арендная плата|A2
+der Balkon|балкон|A2
+das Wohnzimmer|гостиная|A2
+das Schlafzimmer|спальня|A2
+die Treppe|лестница|A2
+die Heizung|отопление|A2
+das Licht|свет|A2
+die Dusche|душ|A2
+der Schrank|шкаф|A2
+der Spiegel|зеркало|A2
+die Pizza|пицца|A2
+der Kuchen|пирог, торт|A2
+das Eis|мороженое, лёд|A2
+die Schokolade|шоколад|A2
+die Marmelade|варенье|A2
+die Erdbeere|клубника|A2
+die Zitrone|лимон|A2
+die Gurke|огурец|A2
+die Zwiebel|лук|A2
+die Karotte|морковь|A2
+der Pilz|гриб|A2
+das Öl|масло (растительное)|A2
+die Gabel|вилка|A2
+der Löffel|ложка|A2
+das Messer|нож|A2
+der Teller|тарелка|A2
+das Glas|стакан, стекло|A2
+die Flasche|бутылка|A2
+die Socke|носок|A2
+die Mütze|шапка|A2
+der Rock|юбка|A2
+der Pullover|свитер|A2
+der Ring|кольцо|A2
+die Uhr|часы, час|A2
+das Pferd|лошадь|A2
+die Kuh|корова|A2
+das Schwein|свинья|A2
+der Vogel|птица|A2
+die Maus|мышь|A2
+das Datum|дата|A2
+der Geburtstag|день рождения|A2
+die Feier|праздник, вечеринка|A2
+die Hochzeit|свадьба|A2
+der Gast|гость|A2
+der Kunde|клиент|A2
+der Student|студент|A2
+der Schüler|школьник|A2
+die Freundin|подруга|A2
+der Ehemann|муж|A2
+die Ehefrau|жена|A2
+abholen|забирать, встречать|A2|V
+ankommen|прибывать|A2|V
+einsteigen|садиться (в транспорт)|A2|V
+aussteigen|выходить (из транспорта)|A2|V
+umsteigen|пересаживаться|A2|V
+einkaufen|делать покупки|A2|V
+aufstehen|вставать|A2|V
+anziehen|надевать|A2|V
+duschen|принимать душ|A2|V
+frühstücken|завтракать|A2|V
+einladen|приглашать|A2|V
+feiern|праздновать|A2|V
+gewinnen|выигрывать|A2|V
+verlieren|терять, проигрывать|A2|V
+gefallen|нравиться|A2|V
+gehören|принадлежать|A2|V
+passen|подходить|A2|V
+schmecken|быть вкусным|A2|V
+regnen|идти (о дожде)|A2|V
+mieten|снимать, арендовать|A2|V
+bekommen|получать|A2|V
+fernsehen|смотреть телевизор|A2|V
+anmelden|регистрировать|A2|V
+mitbringen|приносить с собой|A2|V
+erklären|объяснять|A2|V
+erzählen|рассказывать|A2|V
+benutzen|использовать|A2|V
+ändern|менять|A2|V
+probieren|пробовать|A2|V
+sparen|экономить, копить|A2|V
+verdienen|зарабатывать|A2|V
+parken|парковаться|A2|V
+buchen|бронировать|A2|V
+packen|упаковывать|A2|V
+übernachten|ночевать|A2|V
+ehrlich|честный|A2|A
+freundlich|дружелюбный|A2|A
+fleißig|трудолюбивый|A2|A
+gefährlich|опасный|A2|A
+günstig|выгодный, недорогой|A2|A
+kaputt|сломанный|A2|A
+nass|мокрый|A2|A
+trocken|сухой|A2|A
+sauber|чистый|A2|A
+schmutzig|грязный|A2|A
+sicher|надёжный, уверенный|A2|A
+spät|поздно, поздний|A2|A
+stark|сильный|A2|A
+schwach|слабый|A2|A
+süß|сладкий|A2|A
+sauer|кислый|A2|A
+scharf|острый|A2|A
+einfach|простой|A2|A
+schwierig|трудный|A2|A
+modern|современный|A2|A
+berühmt|известный, знаменитый|A2|A
+die Beziehung|отношения|B1
+die Bedingung|условие|B1
+die Behörde|ведомство, орган власти|B1
+das Ergebnis|результат|B1
+der Eindruck|впечатление|B1
+die Erklärung|объяснение|B1
+die Gelegenheit|возможность, случай|B1
+der Grund|причина, основание|B1
+die Lösung|решение (проблемы)|B1
+die Möglichkeit|возможность|B1
+der Vorteil|преимущество|B1
+der Nachteil|недостаток|B1
+der Unterschied|различие|B1
+die Veränderung|изменение|B1
+die Verbindung|связь, соединение|B1
+die Verabredung|договорённость, свидание|B1
+das Vorstellungsgespräch|собеседование|B1
+das Ziel|цель|B1
+die Wirtschaft|экономика|B1
+ablehnen|отклонять|B1|V
+annehmen|принимать, предполагать|B1|V
+behaupten|утверждать|B1|V
+beschließen|постановить, решить|B1|V
+empfehlen|рекомендовать|B1|V
+enthalten|содержать|B1|V
+erfahren|узнавать|B1|V
+erlauben|разрешать|B1|V
+ermöglichen|делать возможным|B1|V
+fördern|поддерживать, развивать|B1|V
+gelingen|удаваться|B1|V
+genießen|наслаждаться|B1|V
+hoffen|надеяться|B1|V
+nachdenken|размышлять|B1|V
+überlegen|обдумывать|B1|V
+überzeugen|убеждать|B1|V
+unterstützen|поддерживать|B1|V
+vermeiden|избегать|B1|V
+vermuten|предполагать|B1|V
+vorbereiten|подготавливать|B1|V
+vorschlagen|предлагать|B1|V
+zustimmen|соглашаться|B1|V
+teilnehmen|участвовать|B1|V
+sich ärgern|злиться|B1|V
+sich beschweren|жаловаться|B1|V
+sich erinnern|вспоминать|B1|V
+sich interessieren|интересоваться|B1|V
+allgemein|общий, в целом|B1|A
+bereit|готов|B1|A
+deutlich|ясный, отчётливый|B1|A
+eigentlich|собственно, на самом деле|B1|D
+endgültig|окончательный|B1|A
+gleichzeitig|одновременно|B1|D
+kostenlos|бесплатный|B1|A
+notwendig|необходимый|B1|A
+persönlich|личный, лично|B1|A
+selbstständig|самостоятельный|B1|A
+unbedingt|обязательно|B1|D
+vorsichtig|осторожный|B1|A
+wahrscheinlich|вероятно|B1|D
+zufrieden|довольный|B1|A
+zufällig|случайный, случайно|B1|A
+der Ansatz|подход, исходная точка|B2
+der Einfluss|влияние|B2
+die Grundlage|основа|B2
+die Maßnahme|мера, меры|B2
+die Tendenz|тенденция|B2
+der Wandel|перемена, изменение|B2
+die Wahrnehmung|восприятие|B2
+verfügen über|располагать чем-то|B2|V
+berücksichtigen|учитывать|B2|V
+betonen|подчёркивать|B2|V
+durchsetzen|добиваться, проводить в жизнь|B2|V
+entsprechen|соответствовать|B2|V
+erwähnen|упоминать|B2|V
+festlegen|устанавливать|B2|V
+gewährleisten|гарантировать|B2|V
+hervorheben|выделять, подчёркивать|B2|V
+vorantreiben|продвигать|B2|V
+widersprechen|возражать|B2|V
+beitragen|вносить вклад|B2|V
+umsetzen|претворять в жизнь|B2|V
+eindeutig|однозначный|B2|A
+erheblich|значительный|B2|A
+grundsätzlich|принципиальный, в принципе|B2|A
+maßgeblich|определяющий|B2|A
+umfassend|всеобъемлющий|B2|A
+vergleichbar|сопоставимый|B2|A
+zunehmend|всё больше, растущий|B2|A
+die Wechselwirkung|взаимодействие|C1
+die Beschaffenheit|свойства, состояние|C1
+der Missstand|недостаток, неблагополучие|C1
+die Tragweite|значимость, масштаб последствий|C1
+die Zurückhaltung|сдержанность|C1
+die Wertschätzung|уважение, признание|C1
+veranschaulichen|наглядно показывать|C1|V
+bewerkstelligen|осуществить, справиться|C1|V
+beanstanden|выдвигать претензии|C1|V
+durchschauen|видеть насквозь|C1|V
+herbeiführen|вызывать, приводить к|C1|V
+vereiteln|срывать, расстраивать|C1|V
+verkennen|недооценивать, не распознать|C1|V
+zuspitzen|обострять|C1|V
+abwegig|нелепый, ошибочный|C1|A
+beiläufig|мимоходом|C1|A
+stichhaltig|убедительный, обоснованный|C1|A
+nachdrücklich|настойчивый, решительный|C1|A
+schlüssig|логичный, убедительный|C1|A
+unumgänglich|неизбежный|C1|A
+weitreichend|далеко идущий|C1|A
+widersprüchlich|противоречивый|C1|A`.split("\n").forEach(l => {
+    const [de, ru, lvl, c] = l.split("|");
+    if (ALL.some(w => w.de === de)) return;
+    ALL.push({ de, ru, lvl, cat: SH[c] || (/^(der|die|das) /.test(de) ? "Существительные" : "") });
   });
+  const lvlWords = l => ALL.filter(w => w.lvl === l);
+  const lvlDone = l => lvlWords(l).filter(w => known.has(w.de)).length;
+  const unlocked = l => {
+    const k = LEVELS.findIndex(x => x[0] === l);
+    if (premium || k <= 0) return true;
+    const p = LEVELS[k - 1][0];
+    return unlocked(p) && lvlDone(p) >= Math.ceil(lvlWords(p).length * UNLOCK);
+  };
+  const pool = () => ALL.filter(w => unlocked(w.lvl));
+
+  const LEVELS = [["A1", "🌱", "Путешественник"], ["A2", "🏙️", "Горожанин"], ["B1", "🗣️", "Рассказчик"], ["B2", "💼", "Профессионал"], ["C1", "🎓", "Мастер"]];
+  const DECKS = {}, LVKEY = {};
+  DECKS["📚 Все слова"] = () => pool();
+  DECKS["🌱 Старт для нуля"] = () => ALL.filter(w => START.has(w.de));
+  DECKS["🔁 Не выученные"] = () => { const l = pool().filter(w => !known.has(w.de)); return l.length ? l : [{ de: "🎉 Всё выучено!", ru: "Отличная работа!", cat: "" }]; };
+  LEVELS.forEach(([l, e, n]) => { const k = e + " " + l + " · " + n; DECKS[k] = () => ALL.filter(w => w.lvl === l); LVKEY[k] = l; });
+  CATEGORIES.forEach(c => { DECKS[c] = () => pool().filter(w => w.cat === c); });
+const isLocked = k => LVKEY[k] && !unlocked(LVKEY[k]);
+  let lastU = LEVELS.filter(([l]) => unlocked(l)).length;
+  function fill() {
+    const cur = deckSel.value; deckSel.innerHTML = "";
+    Object.keys(DECKS).forEach(k => {
+      const n = DECKS[k]().length;
+      if (!n) return;
+      deckSel.add(new Option((isLocked(k) ? "🔒 " : "") + k + " (" + (LVKEY[k] ? lvlDone(LVKEY[k]) + "/" : "") + n + ")", k));
+    });
+    if (cur && DECKS[cur]) deckSel.value = cur;
+  }
 
   const tg = window.Telegram && Telegram.WebApp;
   if (tg) { tg.ready(); tg.expand(); try { tg.setHeaderColor("#2a1259"); tg.setBackgroundColor("#140a2b"); } catch (e) {} }
@@ -778,9 +1098,14 @@ Wie bitte? | Как, простите? | Фразы и выражения
   let rev = false; // false: немецкий → русский, true: русский → немецкий
   try { rev = localStorage.getItem("dir") === "ru"; } catch (e) {}
 
-  Object.keys(DECKS).forEach(name => deckSel.add(new Option(name, name)));
+  fill();
 
-  function loadDeck() { const d = DECKS[deckSel.value]; words = (typeof d === "function" ? d() : d).slice(); i = 0; render(); }
+  let prevKey = "";
+  function loadDeck() {
+    const key = deckSel.value;
+    if (isLocked(key)) { lockInfo(LVKEY[key]); deckSel.value = prevKey || Object.keys(DECKS)[0]; return; }
+    prevKey = key; words = DECKS[key]().slice(); i = 0; render();
+  }
 
   function render() {
     card.classList.remove("flipped", "enter");
@@ -797,7 +1122,9 @@ Wie bitte? | Как, простите? | Фразы и выражения
     document.documentElement.style.setProperty("--h", (i * 7) % 360);
     const am = words[i].de.match(/^(der|die|das)\b/i);
     card.style.setProperty("--art", am ? ART[am[1].toLowerCase()] : "");
-    $("prog").textContent = "✅ Выучено: " + known.size + " из " + ALL.length;
+    const dk = words.filter(w => known.has(w.de)).length;
+    $("prog").textContent = "✅ " + dk + " из " + words.length + " выучено · осталось " + (words.length - dk) + " · 🔥 " + st.n + " дн. · сегодня " + st.c + "/10";
+    $("fill").style.width = (words.length ? dk * 100 / words.length : 0) + "%";
     $("counter").textContent = (i + 1) + " / " + words.length + (known.has(words[i].de) ? " ✅" : "");
     $("prev").disabled = i === 0;
     $("next").disabled = i === words.length - 1;
@@ -868,10 +1195,16 @@ Wie bitte? | Как, простите? | Фразы и выражения
   const norm = t => t.toLowerCase().replace(/ä/g, "a").replace(/ö/g, "o").replace(/ü/g, "u").replace(/ß/g, "ss").replace(/ё/g, "е");
   const resBox = $("results");
   $("q").oninput = () => {
+    if (CODES.includes($("q").value.trim())) {
+      premium = true; try { localStorage.setItem("premium", "1"); } catch (e) {}
+      $("q").value = ""; resBox.hidden = true; fill(); lastU = LEVELS.length;
+      tg && tg.showAlert ? tg.showAlert("Режим владельца: все уровни открыты") : alert("Режим владельца: все уровни открыты");
+      return;
+    }
     const q = norm($("q").value.trim());
     resBox.innerHTML = "";
     if (!q) { resBox.hidden = true; return; }
-    const found = ALL.filter(w => norm(w.de).includes(q) || norm(w.ru).includes(q));
+    const found = pool().filter(w => norm(w.de).includes(q) || norm(w.ru).includes(q));
     resBox.hidden = false;
     if (!found.length) { resBox.innerHTML = '<div class="none">Ничего не найдено</div>'; return; }
     found.slice(0, 30).forEach((w, idx) => {
@@ -903,8 +1236,17 @@ Wie bitte? | Как, простите? | Фразы и выражения
 
   // Знаю / Повторить
   function setKnown(de, flag) {
+    const was = known.has(de);
     flag ? known.add(de) : known.delete(de);
-    try { localStorage.setItem("known", JSON.stringify([...known])); } catch (e) {}
+    const t = new Date().toISOString().slice(0, 10), y = new Date(Date.now() - 864e5).toISOString().slice(0, 10);
+    if (st.day !== t) { st.n = st.day === y ? st.n + 1 : 1; st.day = t; st.c = 0; }
+    if (flag && !was) st.c++;
+    try { localStorage.setItem("known", JSON.stringify([...known])); localStorage.setItem("st", JSON.stringify(st)); } catch (e) {}
+    const u = LEVELS.filter(([l]) => unlocked(l)).length;
+    if (u !== lastU) {
+      const up = u > lastU; lastU = u; fill();
+      if (up) { const m = "🎉 Открыт уровень " + LEVELS[u - 1][0] + " · " + LEVELS[u - 1][2] + "!"; tg && tg.showAlert ? tg.showAlert(m) : alert(m); }
+    }
   }
   const mark = flag => { setKnown(words[i].de, flag); if (i < words.length - 1) go(1); else render(); };
   $("know").onclick = () => mark(true);
@@ -924,16 +1266,19 @@ Wie bitte? | Как, простите? | Фразы и выражения
   ].map(x => "<p>" + x + "</p>").join("") + "<p>🔊 Нажми на кнопку рядом с карточкой, чтобы услышать слово.</p>");
 
   let qs = { n: 0, ok: 0 };
+  const QN = 10;
   function quiz() {
-    const w = words[Math.floor(Math.random() * words.length)];
-    const ans = rev ? w.de : w.ru, q = rev ? w.ru : w.de;
+    if (qs.n >= QN) return result();
+    const un = words.filter(w => !known.has(w.de)), src = un.length ? un : words;
+    const w = src[Math.floor(Math.random() * src.length)];
+    const ans = rev ? w.de : w.ru, q = rev ? w.ru : w.de, P = pool();
     const opts = [ans];
     while (opts.length < 4) {
-      const o = ALL[Math.floor(Math.random() * ALL.length)], t = rev ? o.de : o.ru;
+      const o = P[Math.floor(Math.random() * P.length)], t = rev ? o.de : o.ru;
       if (!opts.includes(t)) opts.push(t);
     }
     opts.sort(() => Math.random() - 0.5);
-    openModal("<h2>🎯 Тест</h2><p>Верно: " + qs.ok + " из " + qs.n + '</p><div class="qw">' + q + '</div><div id="opts"></div><div id="nx"></div>');
+    openModal("<h2>🎯 Вопрос " + (qs.n + 1) + " из " + QN + "</h2><p>Верно: " + qs.ok + "</p>" + '<div class="qw">' + q + '</div><div id="opts"></div><div id="nx"></div>');
     opts.forEach(t => {
       const b = document.createElement("button"); b.className = "opt"; b.textContent = t;
       b.onclick = () => {
@@ -941,11 +1286,23 @@ Wie bitte? | Как, простите? | Фразы и выражения
         setKnown(w.de, good);
         [...$("opts").children].forEach(x => { x.disabled = true; if (x.textContent === ans) x.classList.add("ok"); });
         if (!good) b.classList.add("bad");
-        const nx = document.createElement("button"); nx.className = "shuffle"; nx.textContent = "Дальше →"; nx.onclick = quiz;
+        const nx = document.createElement("button"); nx.className = "shuffle"; nx.textContent = qs.n >= QN ? "Результат →" : "Дальше →"; nx.onclick = quiz;
         $("nx").appendChild(nx);
       };
       $("opts").appendChild(b);
     });
+  }
+  function result() {
+    const p = Math.round(qs.ok * 100 / QN), dk = words.filter(w => known.has(w.de)).length;
+    const title = p >= 90 ? "🏆 Отлично!" : p >= 70 ? "👍 Хорошо!" : p >= 50 ? "🙂 Неплохо" : "💪 Давай ещё раз";
+    openModal("<h2>" + title + "</h2><p>Правильно: " + qs.ok + " из " + QN + " (" + p + "%)</p><p>В колоде выучено: " + dk + " из " + words.length + "</p><p>Осталось выучить: " + (words.length - dk) + '</p><button class="shuffle" id="again2">🔁 Ещё раунд</button>');
+    $("again2").onclick = () => { qs = { n: 0, ok: 0 }; quiz(); };
+  }
+  function lockInfo(l) {
+    const k = LEVELS.findIndex(x => x[0] === l), p = LEVELS[k - 1][0];
+    const tot = lvlWords(p).length, need = Math.ceil(tot * UNLOCK), done = lvlDone(p);
+    openModal("<h2>🔒 Уровень " + l + " пока закрыт</h2><p>Чтобы открыть его, выучи " + Math.round(UNLOCK * 100) + "% слов уровня " + p + ".</p><p>Выучено: <b>" + done + " из " + need + "</b> нужных (всего в уровне " + tot + ")</p><p>Осталось выучить: <b>" + Math.max(0, need - done) + "</b></p><p>Слово считается выученным, когда ты нажимаешь «✅ Знаю» или отвечаешь верно в тесте.</p>" + '<button class="shuffle" id="go">Перейти к уровню ' + p + "</button>");
+    $("go").onclick = () => { $("modal").hidden = true; deckSel.value = Object.keys(LVKEY).find(x => LVKEY[x] === p); loadDeck(); };
   }
   $("quizBtn").onclick = () => { qs = { n: 0, ok: 0 }; quiz(); };
 
