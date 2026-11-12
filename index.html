@@ -81,9 +81,9 @@
   .face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden;
     border-radius: 28px; display: flex; flex-direction: column; align-items: center; justify-content: center;
     padding: 24px; text-align: center; box-shadow: 0 18px 0 -6px rgba(0,0,0,.28), 0 28px 50px rgba(0,0,0,.35); }
-  .front { background: var(--paper); color: var(--ink); border: 4px solid var(--ink); }
+  .front { background: var(--paper); color: var(--ink); border: 6px solid var(--art, var(--ink)); }
   .back  { background: linear-gradient(135deg, var(--amber), var(--pink)); color: var(--ink);
-           border: 4px solid var(--ink); transform: rotateY(180deg); }
+           border: 6px solid var(--art, var(--ink)); transform: rotateY(180deg); }
   .word { font-size: clamp(34px, 11vw, 52px); font-weight: 900; line-height: 1.1; word-break: break-word; }
   .hint { margin-top: 18px; font-size: 14px; opacity: .55; }
 
@@ -100,6 +100,21 @@
   .shuffle { position: relative; z-index: 1; margin-top: 14px; background: none; border: 2px dashed rgba(255,255,255,.4);
     color: #fff; border-radius: 14px; padding: 8px 16px; font-size: 14px; cursor: pointer; }
 
+  .scene { position: relative; }
+  .fab { position: absolute; top: -14px; right: -6px; z-index: 5; width: 48px; height: 48px; border-radius: 50%;
+    border: 3px solid var(--ink); background: var(--teal); font-size: 22px; cursor: pointer; box-shadow: 0 4px 0 var(--ink); }
+  .fab:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
+  .know { display: flex; gap: 12px; width: 100%; }
+  .again { background: var(--pink); } .knowb { background: #3ddc84; }
+  .legend { font-size: 13px; opacity: .85; text-align: center; }
+  #modal { position: fixed; inset: 0; z-index: 50; background: rgba(10,5,24,.92); display: flex; align-items: center; justify-content: center; padding: 16px; }
+  #modal[hidden] { display: none; }
+  .sheet { width: 100%; max-width: 440px; max-height: 90vh; overflow-y: auto; background: #1c1233; border: 2px solid rgba(255,255,255,.25); border-radius: 22px; padding: 20px; }
+  .sheet h2 { margin: 0 0 12px; } .sheet p { margin: 6px 0; font-size: 15px; line-height: 1.35; }
+  .qw { font-size: 30px; font-weight: 900; text-align: center; margin: 14px 0; }
+  .opt { display: block; width: 100%; margin: 8px 0; padding: 13px; font-size: 17px; font-weight: 700; border-radius: 14px;
+    border: 2px solid rgba(255,255,255,.3); background: rgba(255,255,255,.08); color: #fff; cursor: pointer; }
+  .opt.ok { background: #1f9d55; border-color: #3ddc84; } .opt.bad { background: #b3263e; border-color: #ff5a73; }
   @media (prefers-reduced-motion: reduce) { .blob, .letter, .card, .card.enter { animation: none; transition: none; } }
 </style>
 </head>
@@ -114,10 +129,12 @@
   <input id="q" type="search" placeholder="🔍 Поиск: по-немецки или по-русски" autocomplete="off">
   <div id="results" hidden></div>
   <div id="stat" class="stat" hidden></div>
+  <div id="prog" class="stat"></div>
 </header>
 
 <main>
   <div class="scene">
+    <button class="fab" id="speak" aria-label="Озвучить">🔊</button>
     <div class="card" id="card" role="button" tabindex="0" aria-label="Перевернуть карточку">
       <div class="face front"><div class="word" id="de"></div><div class="hint">Нажмите, чтобы увидеть перевод</div></div>
       <div class="face back"><div class="word" id="ru"></div></div>
@@ -128,10 +145,12 @@
     <div class="counter" id="counter"></div>
     <button class="btn next" id="next">Вперёд →</button>
   </nav>
-  <div class="tools"><button class="shuffle" id="dirBtn"></button><button class="shuffle" id="shuffle">🔀 Перемешать</button><button class="shuffle" id="bgBtn"></button></div>
+  <div class="know"><button class="btn again" id="again">😕 Повторить</button><button class="btn knowb" id="know">✅ Знаю</button></div>
+  <div class="legend">🔵 der · 🔴 die · 🟢 das</div>
+  <div class="tools"><button class="shuffle" id="dirBtn"></button><button class="shuffle" id="shuffle">🔀 Перемешать</button><button class="shuffle" id="quizBtn">🎯 Тест</button><button class="shuffle" id="guideBtn">📖 Как читать</button><button class="shuffle" id="bgBtn"></button></div>
 </main>
 
-<script src="words.js"></script>
+<div id="modal" hidden><div class="sheet" id="sheet"></div></div>
 <script>
   // Слова из тетради. Формат строки: немецкое | перевод | категория (категорию можно не указывать)
   const RAW = `
@@ -205,43 +224,43 @@ interessant | интересно | Прилагательные
 Das | Это | Местоимения
 schlecht | плохо | Прилагательные
 sehr | очень | Наречия
-Kind | ребёнок | Существительные
-Mann | мужчина | Существительные
-Frau | женщина | Существительные
-Buch | книга | Существительные
-Eimer | ведро | Существительные
-Tasse | кружка / чашка | Существительные
+das Kind | ребёнок | Существительные
+der Mann | мужчина | Существительные
+die Frau | женщина | Существительные
+das Buch | книга | Существительные
+der Eimer | ведро | Существительные
+die Tasse | кружка / чашка | Существительные
 wer | кто | Местоимения
-Optimismus | оптимизм | Существительные
-Tourismus | туризм | Существительные
-Mädchen | девушка | Существительные
-Junge | мальчик | Существительные
-Brot | хлеб | Существительные
-Wohnung | квартира | Существительные
-Zeitung | газета | Существительные
-Tee | чай | Существительные
-Tisch | стол | Существительные
-Bäckerei | пекарня | Существительные
-Hund | собака | Существительные
-Katze | кошка | Существительные
-Kaffee | кофе | Существительные
+der Optimismus | оптимизм | Существительные
+der Tourismus | туризм | Существительные
+das Mädchen | девушка | Существительные
+der Junge | мальчик | Существительные
+das Brot | хлеб | Существительные
+die Wohnung | квартира | Существительные
+die Zeitung | газета | Существительные
+der Tee | чай | Существительные
+der Tisch | стол | Существительные
+die Bäckerei | пекарня | Существительные
+der Hund | собака | Существительные
+die Katze | кошка | Существительные
+der Kaffee | кофе | Существительные
 mein / meine | мой / моя | Местоимения
-Mutter / Mama | мать / мама | Существительные
-Hand | рука | Существительные
+die Mutter / Mama | мать / мама | Существительные
+die Hand | рука | Существительные
 alle zusammen | все вместе | Фразы и выражения
 Hallo alle zusammen! | Привет всем! | Фразы и выражения
 dein / deine | твой | Местоимения
 kein / keine | никакой (отрицание) | Местоимения
-Lehrer | учитель | Существительные
-Lehrerin | учительница | Существительные
+der Lehrer | учитель | Существительные
+die Lehrerin | учительница | Существительные
 spricht | говорить | Глаголы
 woher | откуда | Наречия
 kommen | приходить, приезжать | Глаголы
 aus | из | Предлоги
 das Leben | жизнь | Существительные
 von | от, о | Предлоги
-Beruf | профессия | Существительные
-Herr | господин | Существительные
+der Beruf | профессия | Существительные
+der Herr | господин | Существительные
 die Zeit | время | Существительные
 viel | много | Наречия
 der Hunger | голод | Существительные
@@ -249,13 +268,13 @@ der Durst | жажда | Существительные
 viel zu tun | много дел | Фразы и выражения
 nichts | ничего / ничто | Местоимения
 die Angst | страх | Существительные
-Freizeit | свободное время | Существительные
-Freund | друг | Существительные
+die Freizeit | свободное время | Существительные
+der Freund | друг | Существительные
 Niemand | Никто | Местоимения
 Warum | Почему | Наречия
 da | там, тут | Наречия
-Straße | улица | Существительные
-Stadt | город | Существительные
+die Straße | улица | Существительные
+die Stadt | город | Существительные
 mögen | нравиться, любить | Глаголы
 spielen | играть | Глаголы
 kaufen | покупать | Глаголы
@@ -273,7 +292,7 @@ der Laden | магазин | Существительные
 zur / auf Arbeit | на работу | Фразы и выражения
 nach Hause | домой | Фразы и выражения
 mir | мне | Местоимения
-Bruder | брат | Существительные
+der Bruder | брат | Существительные
 verheiratet | женатый | Прилагательные
 geschieden | разведённый | Прилагательные
 ledig | холостой, незамужняя | Прилагательные
@@ -285,13 +304,13 @@ früh | рано | Наречия
 danach | после этого | Наречия
 frei | свободен | Прилагательные
 Wann | Когда | Наречия
-Montag | Понедельник | Существительные
-Dienstag | Вторник | Существительные
-Mittwoch | Среда | Существительные
-Donnerstag | Четверг | Существительные
-Freitag | Пятница | Существительные
-Samstag / Sonnabend | Суббота | Существительные
-Sonntag | Воскресенье | Существительные
+der Montag | Понедельник | Существительные
+der Dienstag | Вторник | Существительные
+der Mittwoch | Среда | Существительные
+der Donnerstag | Четверг | Существительные
+der Freitag | Пятница | Существительные
+der Samstag / Sonnabend | Суббота | Существительные
+der Sonntag | Воскресенье | Существительные
 jeden | каждый | Местоимения
 die Woche | неделя | Существительные
 die Uhren | часы | Существительные
@@ -342,9 +361,393 @@ anfangen | начинать | Глаголы
 öffnen | открывать, отворять | Глаголы
 schließen | закрывать, затворять | Глаголы
 beginnen | начинать, начинаться | Глаголы
+null | ноль | Числительные
+eins | один | Числительные
+zwei | два | Числительные
+drei | три | Числительные
+vier | четыре | Числительные
+fünf | пять | Числительные
+sechs | шесть | Числительные
+sieben | семь | Числительные
+acht | восемь | Числительные
+neun | девять | Числительные
+zehn | десять | Числительные
+blau | синий, голубой | Прилагательные
+braun | коричневый | Прилагательные
+gelb | жёлтый | Прилагательные
+grau | серый | Прилагательные
+grün | зелёный | Прилагательные
+lila | фиолетовый, сиреневый | Прилагательные
+orange | оранжевый | Прилагательные
+rosa | розовый | Прилагательные
+rot | красный | Прилагательные
+schwarz | чёрный | Прилагательные
+weiß | белый | Прилагательные
+der Norden | север | Существительные
+der Süden | юг | Существительные
+der Osten | восток | Существительные
+der Westen | запад | Существительные
+Deutschland | Германия | Существительные
+Österreich | Австрия | Существительные
+die Schweiz | Швейцария | Существительные
+Luxemburg | Люксембург | Существительные
+Europa | Европа | Существительные
+deutsch | немецкий | Прилагательные
+auf Deutsch | на немецком языке | Фразы и выражения
+der Karneval | карнавал | Существительные
+Ostern | Пасха | Существительные
+Weihnachten | Рождество | Существительные
+Neujahr / Silvester | Новый год / Канун Нового года | Существительные
+der Frühling / das Frühjahr | весна | Существительные
+der Sommer | лето | Существительные
+der Herbst | осень | Существительные
+der Winter | зима | Существительные
+der Tag | день | Существительные
+täglich | ежедневно | Наречия
+tagsüber | в течение дня | Наречия
+der Morgen | утро | Существительные
+morgens | по утрам | Наречия
+der Vormittag | время до полудня | Существительные
+der Mittag | полдень | Существительные
+mittags | в полдень | Наречия
+der Nachmittag | время после полудня | Существительные
+der Abend | вечер | Существительные
+abends | по вечерам | Наречия
+die Nacht | ночь | Существительные
+nachts | ночью | Наречия
+die Mitternacht | полночь | Существительные
+um Mitternacht | в полночь | Фразы и выражения
+am Wochenende | на выходных | Фразы и выражения
+der Arbeitstag / der Werktag | рабочий день | Существительные
+der Feiertag | праздничный день | Существительные
+die Sekunde | секунда | Существительные
+die Minute | минута | Существительные
+der Monat | месяц | Существительные
+das Jahr | год | Существительные
+halb vier | полчетвёртого (15:30) | Фразы и выражения
+Viertel nach zehn | четверть после десяти (10:15) | Фразы и выражения
+Viertel vor sieben | без четверти семь (6:45) | Фразы и выражения
+fünf nach zwei | пять минут третьего (14:05) | Фразы и выражения
+fünf vor drei | без пяти три (14:55) | Фразы и выражения
+zwanzig vor neun | без двадцати девять (20:40) | Фразы и выражения
+erste | первый | Числительные
+zweite | второй | Числительные
+dritte | третий | Числительные
+vierte | четвёртый | Числительные
+erstens | во-первых | Числительные
+zweitens | во-вторых | Числительные
+drittens | в-третьих | Числительные
+einmal | один раз | Числительные
+zweimal | два раза | Числительные
+dreimal | три раза | Числительные
+das Abitur | аттестат зрелости | Существительные
+der Direktor | директор | Существительные
+die Hausaufgabe | домашнее задание | Существительные
+die Klasse | класс | Существительные
+die Klassenfahrt | школьная поездка | Существительные
+das Sekretariat | секретариат | Существительные
+der Stundenplan | расписание уроков | Существительные
+Biologie / Chemie / Physik | биология / химия / физика | Существительные
+Deutsch / Englisch / Latein | немецкий / английский / латынь | Существительные
+Geografie / Geschichte | география / история | Существительные
+Kunst / Musik / Sport | искусство / музыка / физкультура | Существительные
+Mathematik | математика | Существительные
+Religion / Sozialkunde | религия / обществознание | Существительные
+der Euro / der Cent | евро / цент | Существительные
+der Franken / der Rappen | франк / раппен | Существительные
+der Meter | метр | Существительные
+das Prozent | процент | Существительные
+der Liter | литр | Существительные
+das Gramm / das Kilogramm | грамм / килограмм | Существительные
+Grad Celsius | градусы Цельсия | Существительные
+der Angestellte | служащий | Существительные
+der Arzt / die Ärztin | врач | Существительные
+der Auszubildende | ученик, стажёр | Существительные
+der Autor | автор, писатель | Существительные
+der Babysitter | няня | Существительные
+der Bäcker | пекарь | Существительные
+der Doktor | доктор | Существительные
+der Fahrer | водитель | Существительные
+der Friseur | парикмахер | Существительные
+der Handwerker | ремесленник, мастер | Существительные
+der Hausmann / die Hausfrau | домохозяин / домохозяйка | Существительные
+der Journalist | журналист | Существительные
+der Kaufmann | коммерсант | Существительные
+der Kellner | официант | Существительные
+der Koch | повар | Существительные
+der Krankenpfleger | медбрат | Существительные
+die Krankenschwester | медсестра | Существительные
+der Künstler | художник, артист | Существительные
+der Mechaniker | механик | Существительные
+das Model | модель | Существительные
+der Musiker | музыкант | Существительные
+der Polizist | полицейский | Существительные
+der Rentner | пенсионер | Существительные
+der Sänger | певец | Существительные
+der Schauspieler | актёр | Существительные
+der Techniker | техник | Существительные
+der Verkäufer | продавец | Существительные
+der Cousin / die Cousine | двоюродный брат / сестра | Существительные
+die Eltern | родители | Существительные
+der Enkel / die Enkelin | внук / внучка | Существительные
+die Geschwister | братья и сёстры | Существительные
+die Großeltern | бабушка и дедушка | Существительные
+die Großmutter | бабушка | Существительные
+der Großvater | дедушка | Существительные
+die Mutter | мать | Существительные
+der Vater | отец | Существительные
+der Onkel | дядя | Существительные
+die Tante | тётя | Существительные
+die Tochter | дочь | Существительные
+elf | одиннадцать | Числительные
+zwölf | двенадцать | Числительные
+dreizehn | тринадцать | Числительные
+vierzehn | четырнадцать | Числительные
+fünfzehn | пятнадцать | Числительные
+zwanzig | двадцать | Числительные
+dreißig | тридцать | Числительные
+vierzig | сорок | Числительные
+fünfzig | пятьдесят | Числительные
+hundert | сто | Числительные
+tausend | тысяча | Числительные
+der Januar | январь | Существительные
+der Februar | февраль | Существительные
+der März | март | Существительные
+der April | апрель | Существительные
+der Mai | май | Существительные
+der Juni | июнь | Существительные
+der Juli | июль | Существительные
+der August | август | Существительные
+der September | сентябрь | Существительные
+der Oktober | октябрь | Существительные
+der November | ноябрь | Существительные
+der Dezember | декабрь | Существительные
+das Wasser | вода | Существительные
+die Milch | молоко | Существительные
+der Saft | сок | Существительные
+das Bier | пиво | Существительные
+der Wein | вино | Существительные
+der Käse | сыр | Существительные
+die Wurst | колбаса | Существительные
+das Fleisch | мясо | Существительные
+der Fisch | рыба | Существительные
+das Gemüse | овощи | Существительные
+das Obst | фрукты | Существительные
+der Apfel | яблоко | Существительные
+die Banane | банан | Существительные
+die Kartoffel | картофель | Существительные
+die Tomate | помидор | Существительные
+das Ei | яйцо | Существительные
+der Reis | рис | Существительные
+die Nudeln | макароны, лапша | Существительные
+die Suppe | суп | Существительные
+der Salat | салат | Существительные
+der Zucker | сахар | Существительные
+das Salz | соль | Существительные
+das Frühstück | завтрак | Существительные
+das Mittagessen | обед | Существительные
+das Abendessen | ужин | Существительные
+das Restaurant | ресторан | Существительные
+die Rechnung | счёт | Существительные
+der Kopf | голова | Существительные
+das Auge | глаз | Существительные
+das Ohr | ухо | Существительные
+die Nase | нос | Существительные
+der Mund | рот | Существительные
+das Haar | волосы | Существительные
+der Arm | рука (от плеча) | Существительные
+das Bein | нога | Существительные
+der Fuß | ступня | Существительные
+das Herz | сердце | Существительные
+die Hose | брюки | Существительные
+das Hemd | рубашка | Существительные
+die Jacke | куртка | Существительные
+der Mantel | пальто | Существительные
+der Schuh | ботинок, туфля | Существительные
+das Kleid | платье | Существительные
+die Tasche | сумка | Существительные
+das Haus | дом | Существительные
+das Zimmer | комната | Существительные
+die Küche | кухня | Существительные
+das Bett | кровать | Существительные
+der Stuhl | стул | Существительные
+der Schlüssel | ключ | Существительные
+der Garten | сад | Существительные
+das Telefon | телефон | Существительные
+das Handy | мобильный телефон | Существительные
+der Computer | компьютер | Существительные
+das Auto | машина | Существительные
+der Bus | автобус | Существительные
+der Zug | поезд | Существительные
+der Bahnhof | вокзал | Существительные
+der Flughafen | аэропорт | Существительные
+das Flugzeug | самолёт | Существительные
+das Fahrrad | велосипед | Существительные
+das Taxi | такси | Существительные
+die Haltestelle | остановка | Существительные
+die Fahrkarte | билет (на транспорт) | Существительные
+der Supermarkt | супермаркет | Существительные
+die Bank | банк | Существительные
+die Post | почта | Существительные
+die Apotheke | аптека | Существительные
+das Krankenhaus | больница | Существительные
+der Park | парк | Существительные
+das Kino | кино | Существительные
+das Museum | музей | Существительные
+das Hotel | гостиница | Существительные
+der Markt | рынок | Существительные
+das Wetter | погода | Существительные
+die Sonne | солнце | Существительные
+der Regen | дождь | Существительные
+der Schnee | снег | Существительные
+der Wind | ветер | Существительные
+der Himmel | небо | Существительные
+der Baum | дерево | Существительные
+das Meer | море | Существительные
+der Berg | гора | Существительные
+der See | озеро | Существительные
+der Sohn | сын | Существительные
+die Schwester | сестра | Существительные
+die Familie | семья | Существительные
+der Mensch | человек | Существительные
+der Name | имя, название | Существительные
+der Nachbar | сосед | Существительные
+das Geld | деньги | Существительные
+das Geschenk | подарок | Существительные
+das Problem | проблема | Существительные
+die Frage | вопрос | Существительные
+die Hilfe | помощь | Существительные
+das Glück | счастье, удача | Существительные
+sein | быть | Глаголы
+haben | иметь | Глаголы
+gehen | идти, ходить | Глаголы
+fahren | ехать | Глаголы
+sehen | видеть | Глаголы
+hören | слышать, слушать | Глаголы
+sprechen | говорить | Глаголы
+sagen | сказать | Глаголы
+essen | есть, кушать | Глаголы
+trinken | пить | Глаголы
+schlafen | спать | Глаголы
+schreiben | писать | Глаголы
+lesen | читать | Глаголы
+laufen | бежать, ходить пешком | Глаголы
+sitzen | сидеть | Глаголы
+liegen | лежать | Глаголы
+warten | ждать | Глаголы
+suchen | искать | Глаголы
+finden | находить | Глаголы
+brauchen | нуждаться, требоваться | Глаголы
+bringen | приносить | Глаголы
+zeigen | показывать | Глаголы
+kosten | стоить | Глаголы
+zahlen | платить | Глаголы
+bestellen | заказывать | Глаголы
+wissen | знать (факт) | Глаголы
+denken | думать | Глаголы
+glauben | верить, полагать | Глаголы
+singen | петь | Глаголы
+kochen | готовить, варить | Глаголы
+waschen | мыть, стирать | Глаголы
+treffen | встречать | Глаголы
+besuchen | посещать | Глаголы
+reisen | путешествовать | Глаголы
+fliegen | летать | Глаголы
+schwimmen | плавать | Глаголы
+studieren | учиться (в вузе) | Глаголы
+verstehen | понимать | Глаголы
+vergessen | забывать | Глаголы
+weinen | плакать | Глаголы
+groß | большой, высокий | Прилагательные
+klein | маленький | Прилагательные
+neu | новый | Прилагательные
+alt | старый | Прилагательные
+jung | молодой | Прилагательные
+schnell | быстрый, быстро | Прилагательные
+langsam | медленный, медленно | Прилагательные
+teuer | дорогой | Прилагательные
+billig | дешёвый | Прилагательные
+richtig | правильный | Прилагательные
+falsch | неправильный | Прилагательные
+leicht | лёгкий | Прилагательные
+schwer | тяжёлый, трудный | Прилагательные
+hell | светлый | Прилагательные
+dunkel | тёмный | Прилагательные
+voll | полный | Прилагательные
+leer | пустой | Прилагательные
+warm | тёплый | Прилагательные
+kalt | холодный | Прилагательные
+heiß | горячий, жаркий | Прилагательные
+krank | больной | Прилагательные
+gesund | здоровый | Прилагательные
+glücklich | счастливый | Прилагательные
+traurig | грустный | Прилагательные
+nett | милый, приятный | Прилагательные
+lustig | весёлый, смешной | Прилагательные
+wichtig | важный | Прилагательные
+laut | громкий | Прилагательные
+leise | тихий | Прилагательные
+lang | длинный | Прилагательные
+kurz | короткий | Прилагательные
+hungrig | голодный | Прилагательные
+durstig | испытывающий жажду | Прилагательные
+hier | здесь | Наречия
+dort | там | Наречия
+links | слева, налево | Наречия
+rechts | справа, направо | Наречия
+geradeaus | прямо | Наречия
+oben | наверху | Наречия
+unten | внизу | Наречия
+morgen | завтра | Наречия
+gestern | вчера | Наречия
+nie | никогда | Наречия
+selten | редко | Наречия
+vielleicht | возможно | Наречия
+zusammen | вместе | Наречия
+allein | один, в одиночестве | Наречия
+genug | достаточно | Наречия
+wieder | снова | Наречия
+nur | только | Наречия
+mehr | больше | Наречия
+weniger | меньше | Наречия
+alles | всё | Наречия
+etwas | что-то | Наречия
+Wie geht's? | Как дела? | Фразы и выражения
+Mir geht es gut. | У меня всё хорошо. | Фразы и выражения
+Wie heißt du? | Как тебя зовут? | Фразы и выражения
+Ich heiße ... | Меня зовут ... | Фразы и выражения
+Woher kommst du? | Откуда ты? | Фразы и выражения
+Ich komme aus ... | Я из ... | Фразы и выражения
+Wie viel kostet das? | Сколько это стоит? | Фразы и выражения
+Ich möchte ... | Я хотел(а) бы ... | Фразы и выражения
+Ich habe Hunger. | Я голоден. | Фразы и выражения
+Ich weiß nicht. | Я не знаю. | Фразы и выражения
+Noch einmal, bitte. | Ещё раз, пожалуйста. | Фразы и выражения
+Langsam, bitte. | Помедленнее, пожалуйста. | Фразы и выражения
+Wo ist die Toilette? | Где туалет? | Фразы и выражения
+Hilfe! | Помогите! | Фразы и выражения
+Viel Glück! | Удачи! | Фразы и выражения
+Alles Gute! | Всего хорошего! | Фразы и выражения
+Herzlichen Glückwunsch! | Поздравляю! | Фразы и выражения
+Guten Appetit! | Приятного аппетита! | Фразы и выражения
+Prost! | За здоровье! (тост) | Фразы и выражения
+Gute Reise! | Счастливого пути! | Фразы и выражения
+Gesundheit! | Будь здоров! | Фразы и выражения
+Kein Problem. | Без проблем. | Фразы и выражения
+Gern geschehen. | Пожалуйста (в ответ на «спасибо»). | Фразы и выражения
+Danke | Спасибо | Фразы и выражения
+Bitte | Пожалуйста, прошу | Фразы и выражения
+Genau! | Точно! | Фразы и выражения
+Stimmt. | Верно. | Фразы и выражения
+Leider | К сожалению | Фразы и выражения
+Schade! | Жаль! | Фразы и выражения
+Tut mir leid. | Мне жаль. | Фразы и выражения
+Wie bitte? | Как, простите? | Фразы и выражения
 `;
+  const SH = { N: "Существительные", V: "Глаголы", A: "Прилагательные", D: "Наречия", F: "Фразы и выражения", Z: "Числительные", P: "Предлоги", M: "Местоимения" };
+  const X2 = (window.EXTRA2 || "").split("\n").filter(l => l.trim()).map(l => { const [a, b, c] = l.split("|"); return a + " | " + b + " | " + (SH[c] || ""); }).join("\n");
   const seen = new Set();
-  const ALL = (RAW + "\n" + (window.EXTRA || "")).split("\n").filter(l => l.trim()).map(l => {
+  const ALL = (RAW + "\n" + (window.EXTRA || "") + "\n" + X2).split("\n").filter(l => l.trim()).map(l => {
     const [de, ru, cat] = l.split(" | ");
     return { de: de.trim(), ru: ru.trim(), cat: (cat || "").trim() };
   }).filter(w => !seen.has(w.de) && seen.add(w.de));
@@ -352,7 +755,15 @@ beginnen | начинать, начинаться | Глаголы
   // Наборы в выпадающем списке. Пустые категории скрываются сами.
   const CATEGORIES = ["Существительные", "Прилагательные", "Глаголы", "Местоимения",
                       "Наречия", "Предлоги", "Числительные", "Фразы и выражения"];
-  const DECKS = { "📚 Все слова (уникальные)": ALL };
+  let known = new Set();
+  try { known = new Set(JSON.parse(localStorage.getItem("known") || "[]")); } catch (e) {}
+  const ART = { der: "#3b82f6", die: "#ff4d6d", das: "#22c55e" };
+  const START = new Set(("Hallo|Guten Morgen|Guten Tag|Guten Abend|Gute Nacht|Tschüß|Auf Wiedersehen|Danke schön|Bitte schön|Entschuldigung|Ja|Nein|ich|du|er|sie|es|wir|ihr|Sie|heißen|Wohnen|kommen|lernen|arbeiten|machen|gut|schlecht|sehr|Auch|und|Aber|nicht|Was|Wo|wer|Warum|Wann|ich verstehe nicht|ich verstehe Sie|Sprechen Sie Englisch?|heute|jetzt|null|eins|zwei|drei|vier|fünf|sechs|sieben|acht|neun|zehn").split("|"));
+  const DECKS = {
+    "📚 Все слова (уникальные)": ALL,
+    "🌱 Старт для нуля": ALL.filter(w => START.has(w.de)),
+    "🔁 Не выученные": () => { const l = ALL.filter(w => !known.has(w.de)); return l.length ? l : [{ de: "🎉 Всё выучено!", ru: "Отличная работа!", cat: "" }]; }
+  };
   CATEGORIES.forEach(c => {
     const list = ALL.filter(w => w.cat === c);
     if (list.length) DECKS[c + " (" + list.length + ")"] = list;
@@ -369,7 +780,7 @@ beginnen | начинать, начинаться | Глаголы
 
   Object.keys(DECKS).forEach(name => deckSel.add(new Option(name, name)));
 
-  function loadDeck() { words = DECKS[deckSel.value].slice(); i = 0; render(); }
+  function loadDeck() { const d = DECKS[deckSel.value]; words = (typeof d === "function" ? d() : d).slice(); i = 0; render(); }
 
   function render() {
     card.classList.remove("flipped", "enter");
@@ -384,7 +795,10 @@ beginnen | начинать, начинаться | Глаголы
       el.style.fontSize = n > 40 ? "22px" : n > 24 ? "28px" : n > 14 ? "36px" : "";
     });
     document.documentElement.style.setProperty("--h", (i * 7) % 360);
-    $("counter").textContent = (i + 1) + " / " + words.length;
+    const am = words[i].de.match(/^(der|die|das)\b/i);
+    card.style.setProperty("--art", am ? ART[am[1].toLowerCase()] : "");
+    $("prog").textContent = "✅ Выучено: " + known.size + " из " + ALL.length;
+    $("counter").textContent = (i + 1) + " / " + words.length + (known.has(words[i].de) ? " ✅" : "");
     $("prev").disabled = i === 0;
     $("next").disabled = i === words.length - 1;
   }
@@ -478,6 +892,62 @@ beginnen | начинать, начинаться | Глаголы
       if (me.id === OWNER_ID) { $("stat").textContent = "👥 Пользователей: " + t; $("stat").hidden = false; }
     }).catch(() => {});
   }
+
+  // Озвучка немецкого слова
+  $("speak").onclick = () => {
+    if (!window.speechSynthesis) return;
+    const t = words[i].de.replace(/\(.*?\)/g, "").split(" / ")[0].trim();
+    const u = new SpeechSynthesisUtterance(t); u.lang = "de-DE"; u.rate = 0.85;
+    speechSynthesis.cancel(); speechSynthesis.speak(u);
+  };
+
+  // Знаю / Повторить
+  function setKnown(de, flag) {
+    flag ? known.add(de) : known.delete(de);
+    try { localStorage.setItem("known", JSON.stringify([...known])); } catch (e) {}
+  }
+  const mark = flag => { setKnown(words[i].de, flag); if (i < words.length - 1) go(1); else render(); };
+  $("know").onclick = () => mark(true);
+  $("again").onclick = () => mark(false);
+
+  // Окно (подсказка по чтению и тест)
+  function openModal(html) {
+    $("sheet").innerHTML = html + '<button class="shuffle" id="mclose">Закрыть ✕</button>';
+    $("modal").hidden = false;
+    $("mclose").onclick = () => { $("modal").hidden = true; render(); };
+  }
+  $("guideBtn").onclick = () => openModal("<h2>📖 Как читать по-немецки</h2>" + [
+    "<b>ä</b> — как «э»", "<b>ö</b> — как «ё», но губы трубочкой", "<b>ü</b> — как «ю» в слове «тюль»", "<b>ß</b> — как «сс»",
+    "<b>ch</b> — «х» (мягкое после e, i)", "<b>sch</b> — «ш»", "<b>sp-</b> / <b>st-</b> в начале — «шп» / «шт»",
+    "<b>ei</b> — «ай»", "<b>ie</b> — долгое «и»", "<b>eu</b>, <b>äu</b> — «ой»", "<b>v</b> — «ф»", "<b>w</b> — «в»", "<b>z</b> — «ц»",
+    "<b>s</b> перед гласной — «з»", "Все существительные пишутся с большой буквы"
+  ].map(x => "<p>" + x + "</p>").join("") + "<p>🔊 Нажми на кнопку рядом с карточкой, чтобы услышать слово.</p>");
+
+  let qs = { n: 0, ok: 0 };
+  function quiz() {
+    const w = words[Math.floor(Math.random() * words.length)];
+    const ans = rev ? w.de : w.ru, q = rev ? w.ru : w.de;
+    const opts = [ans];
+    while (opts.length < 4) {
+      const o = ALL[Math.floor(Math.random() * ALL.length)], t = rev ? o.de : o.ru;
+      if (!opts.includes(t)) opts.push(t);
+    }
+    opts.sort(() => Math.random() - 0.5);
+    openModal("<h2>🎯 Тест</h2><p>Верно: " + qs.ok + " из " + qs.n + '</p><div class="qw">' + q + '</div><div id="opts"></div><div id="nx"></div>');
+    opts.forEach(t => {
+      const b = document.createElement("button"); b.className = "opt"; b.textContent = t;
+      b.onclick = () => {
+        qs.n++; const good = t === ans; if (good) qs.ok++;
+        setKnown(w.de, good);
+        [...$("opts").children].forEach(x => { x.disabled = true; if (x.textContent === ans) x.classList.add("ok"); });
+        if (!good) b.classList.add("bad");
+        const nx = document.createElement("button"); nx.className = "shuffle"; nx.textContent = "Дальше →"; nx.onclick = quiz;
+        $("nx").appendChild(nx);
+      };
+      $("opts").appendChild(b);
+    });
+  }
+  $("quizBtn").onclick = () => { qs = { n: 0, ok: 0 }; quiz(); };
 
   // Переключатель направления: 🇩🇪 → 🇷🇺 / 🇷🇺 → 🇩🇪
   function applyDir() { $("dirBtn").textContent = rev ? "🇷🇺 → 🇩🇪" : "🇩🇪 → 🇷🇺"; }
