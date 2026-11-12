@@ -1,0 +1,1514 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Немецкие карточки</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root {
+    --ink: #1c1233;
+    --paper: #fffaf0;
+    --pink: #ff3d8b;
+    --amber: #ffb627;
+    --teal: #19d3c5;
+    --violet: #6a3dff;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    font-family: "Trebuchet MS", "Segoe UI", system-ui, sans-serif;
+    color: #fff;
+    background: #140a2b;
+    overflow: hidden;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 20px 16px calc(20px + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* ---------- Фон: цвет по краям, тишина в центре ---------- */
+  :root { --h: 0; }
+  .bg { position: fixed; inset: 0; z-index: 0; overflow: hidden; background: #130828; }
+  /* тёмная «подушка» за карточкой, чтобы слово читалось на любом фоне */
+  .bg::after { content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(ellipse 85% 42% at 50% 48%, rgba(15,7,32,.92) 0%, rgba(15,7,32,.6) 55%, transparent 100%); }
+  .blob { position: absolute; border-radius: 50%; filter: blur(55px); opacity: .55;
+    animation: drift 32s ease-in-out infinite alternate;
+    transition: background-color 2s ease, opacity .6s; }
+  .b1 { width: 340px; height: 340px; top: -110px;  left: -110px;  background: hsl(calc(var(--h) + 330), 95%, 58%); }
+  .b2 { width: 360px; height: 360px; bottom: -120px; right: -120px; background: hsl(calc(var(--h) + 175), 90%, 50%); animation-delay: -9s; }
+  .b3 { width: 280px; height: 280px; top: -90px;  right: -110px; background: hsl(calc(var(--h) + 40), 100%, 58%); animation-delay: -17s; }
+  .b4 { width: 300px; height: 300px; bottom: -110px; left: -120px; background: hsl(calc(var(--h) + 260), 95%, 62%); animation-delay: -5s; }
+  @keyframes drift {
+    from { transform: translate(0, 0) scale(1); }
+    to   { transform: translate(40px, 30px) scale(1.2); }
+  }
+  /* немецкие буквы плывут только вдоль краёв, не за карточкой */
+  .letter { position: absolute; bottom: -60px; font-weight: 900; color: rgba(255,255,255,.07);
+    animation: rise linear infinite; user-select: none; }
+  @keyframes rise { to { transform: translateY(-125vh) rotate(25deg); } }
+  /* яркий режим: насыщеннее и быстрее */
+  body:not(.calm) .blob { opacity: .85; animation-duration: 14s; }
+  body:not(.calm) .letter { color: rgba(255,255,255,.14); }
+  .tools { position: relative; z-index: 1; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+
+  #q { width: 100%; margin-top: 10px; padding: 12px 14px; border-radius: 16px; border: 2px solid rgba(255,255,255,.25);
+    background: rgba(20,10,43,.55); color: #fff; font-size: 16px; backdrop-filter: blur(8px); outline: none; }
+  #q::placeholder { color: rgba(255,255,255,.55); }
+  #results { margin-top: 8px; max-height: 34vh; overflow-y: auto; border-radius: 16px; background: rgba(20,10,43,.85); }
+  #results button { display: block; width: 100%; text-align: left; padding: 10px 14px; background: none; border: 0;
+    border-bottom: 1px solid rgba(255,255,255,.1); color: #fff; font-size: 15px; cursor: pointer; }
+  #results .none { padding: 10px 14px; opacity: .7; font-size: 15px; }
+  .stat { text-align: center; font-size: 13px; opacity: .8; margin-top: 8px; }
+
+  /* ---------- Layout ---------- */
+  header, main, nav { position: relative; z-index: 1; width: 100%; max-width: 440px; }
+  h1 { font-size: 26px; margin: 4px 0 14px; text-align: center; letter-spacing: .5px;
+    text-shadow: 0 3px 0 rgba(255,61,139,.55); }
+  select {
+    width: 100%; padding: 13px 14px; border-radius: 16px; border: 2px solid rgba(255,255,255,.25);
+    background: rgba(20,10,43,.55); color: #fff; font-size: 16px; backdrop-filter: blur(8px);
+    appearance: none; -webkit-appearance: none;
+  }
+  main { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 18px; }
+
+  /* ---------- Card ---------- */
+  .scene { width: 100%; height: 250px; perspective: 1200px; }
+  .card { position: relative; width: 100%; height: 100%; transform-style: preserve-3d;
+    transition: transform .55s cubic-bezier(.3,1.4,.5,1); cursor: pointer; }
+  .card.flipped { transform: rotateY(180deg); }
+  .card.enter { animation: pop .4s cubic-bezier(.3,1.5,.5,1); }
+  @keyframes pop { from { opacity: 0; transform: scale(.85) rotate(-3deg); } }
+  .face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden;
+    border-radius: 28px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 24px; text-align: center; box-shadow: 0 18px 0 -6px rgba(0,0,0,.28), 0 28px 50px rgba(0,0,0,.35); }
+  .front { background: var(--paper); color: var(--ink); border: 6px solid var(--art, var(--ink)); }
+  .back  { background: linear-gradient(135deg, var(--amber), var(--pink)); color: var(--ink);
+           border: 6px solid var(--art, var(--ink)); transform: rotateY(180deg); }
+  .word { font-size: clamp(34px, 11vw, 52px); font-weight: 900; line-height: 1.1; word-break: break-word; }
+  .hint { margin-top: 18px; font-size: 14px; opacity: .55; }
+
+  /* ---------- Controls ---------- */
+  nav { display: flex; align-items: center; gap: 12px; }
+  .btn { flex: 1; padding: 16px 0; font-size: 18px; font-weight: 800; color: var(--ink);
+    border: 3px solid var(--ink); border-radius: 18px; cursor: pointer;
+    box-shadow: 0 6px 0 var(--ink); transition: transform .08s, box-shadow .08s; }
+  .btn:active { transform: translateY(5px); box-shadow: 0 1px 0 var(--ink); }
+  .btn:disabled { opacity: .4; }
+  .prev { background: var(--teal); }
+  .next { background: var(--amber); }
+  .counter { min-width: 76px; text-align: center; font-weight: 800; font-size: 17px; }
+  .shuffle { position: relative; z-index: 1; margin-top: 14px; background: none; border: 2px dashed rgba(255,255,255,.4);
+    color: #fff; border-radius: 14px; padding: 8px 16px; font-size: 14px; cursor: pointer; }
+
+  .scene { position: relative; }
+  .fab { position: absolute; top: -14px; right: -6px; z-index: 5; width: 48px; height: 48px; border-radius: 50%;
+    border: 3px solid var(--ink); background: var(--teal); font-size: 22px; cursor: pointer; box-shadow: 0 4px 0 var(--ink); }
+  .fab:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
+  .know { display: flex; gap: 12px; width: 100%; }
+  .again { background: var(--pink); } .knowb { background: #3ddc84; }
+  .legend { font-size: 13px; opacity: .85; text-align: center; }
+  #modal { position: fixed; inset: 0; z-index: 50; background: rgba(10,5,24,.92); display: flex; align-items: center; justify-content: center; padding: 16px; }
+  #modal[hidden] { display: none; }
+  .sheet { width: 100%; max-width: 440px; max-height: 90vh; overflow-y: auto; background: #1c1233; border: 2px solid rgba(255,255,255,.25); border-radius: 22px; padding: 20px; }
+  .sheet h2 { margin: 0 0 12px; } .sheet p { margin: 6px 0; font-size: 15px; line-height: 1.35; }
+  .qw { font-size: 30px; font-weight: 900; text-align: center; margin: 14px 0; }
+  .opt { display: block; width: 100%; margin: 8px 0; padding: 13px; font-size: 17px; font-weight: 700; border-radius: 14px;
+    border: 2px solid rgba(255,255,255,.3); background: rgba(255,255,255,.08); color: #fff; cursor: pointer; }
+  .opt.ok { background: #1f9d55; border-color: #3ddc84; } .opt.bad { background: #b3263e; border-color: #ff5a73; }
+  #bar { height: 8px; border-radius: 8px; background: rgba(255,255,255,.15); margin-top: 6px; overflow: hidden; }
+  #fill { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #19d3c5, #ffb627, #ff3d8b); transition: width .5s; }
+  body { padding-bottom: calc(86px + env(safe-area-inset-bottom, 0px)); }
+  header[hidden], main[hidden] { display: none; }
+  .screen { position: relative; z-index: 1; width: 100%; max-width: 440px; overflow-y: auto; flex: 1; }
+  .screen[hidden] { display: none; }
+  .screen h1 { font-size: 24px; margin: 4px 0 10px; text-align: center; }
+  .screen p { margin: 8px 0; font-size: 15px; line-height: 1.4; }
+  .pb { height: 8px; border-radius: 8px; background: rgba(255,255,255,.15); overflow: hidden; margin: 6px 0 12px; }
+  .pb i { display: block; height: 100%; background: linear-gradient(90deg, #19d3c5, #ffb627, #ff3d8b); }
+  #tabs { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; display: flex; justify-content: center; gap: 8px;
+    padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px)); background: rgba(15,7,32,.94); border-top: 1px solid rgba(255,255,255,.12); }
+  #tabs button { flex: 1; max-width: 140px; padding: 10px 0; border-radius: 14px; border: 2px solid transparent; background: none; color: #fff; font-size: 13px; font-weight: 700; cursor: pointer; }
+  #tabs button.on { background: rgba(255,255,255,.14); border-color: rgba(255,255,255,.3); }
+  .sheet b { color: #ffb627; }
+  html { -webkit-text-size-adjust: 100%; }
+  html, body { height: auto; min-height: 100%; }
+  body { overflow-x: hidden; overflow-y: auto; -webkit-overflow-scrolling: touch; justify-content: flex-start; }
+  main { justify-content: flex-start; gap: 14px; padding-bottom: 8px; }
+  .scene { height: clamp(190px, 30vh, 250px); }
+  .fab { right: 8px; top: 8px; width: 52px; height: 52px; }
+  .btn { min-height: 54px; }
+  .shuffle { min-height: 46px; padding: 10px 16px; }
+  .opt { min-height: 52px; }
+  #tabs button { min-height: 50px; font-size: 12px; padding: 6px 2px; }
+  .screen { overflow: visible; flex: none; }
+  .sheet { max-height: 86vh; max-height: 86dvh; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; overflow-x: auto; }
+  .sheet table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 14px; }
+  .sheet th, .sheet td { border: 1px solid rgba(255,255,255,.22); padding: 7px 8px; text-align: left; vertical-align: top; }
+  .sheet th { background: rgba(255,255,255,.12); }
+  .sheet h3 { margin: 14px 0 4px; font-size: 16px; color: #19d3c5; }
+  .msg { padding: 10px 13px; border-radius: 16px; margin: 8px 0; max-width: 92%; white-space: pre-wrap; line-height: 1.4; font-size: 15px; }
+  .msg.me { background: #3b82f6; margin-left: auto; } .msg.bot { background: rgba(255,255,255,.13); }
+  #log { min-height: 32vh; } .aiRow { display: flex; gap: 8px; margin-top: 10px; }
+  .aiRow .opt { margin: 0; flex: 1; } .aiRow .btn { flex: none; width: 60px; }
+  @media (max-width: 380px) { h1 { font-size: 22px; } .word { font-size: clamp(28px, 10vw, 44px); } }
+  @media (prefers-reduced-motion: reduce) { .blob, .letter, .card, .card.enter { animation: none; transition: none; } }
+</style>
+</head>
+<body>
+<div class="bg" id="bg">
+  <div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div><div class="blob b4"></div>
+</div>
+
+<header>
+  <h1>🇩🇪 Немецкие карточки</h1>
+  <select id="deck" aria-label="Набор слов"></select>
+  <input id="q" type="search" placeholder="🔍 Поиск: по-немецки или по-русски" autocomplete="off">
+  <div id="results" hidden></div>
+  <div id="stat" class="stat" hidden></div>
+  <div id="prog" class="stat"></div>
+  <div id="bar"><i id="fill"></i></div>
+</header>
+
+<main>
+  <div class="scene">
+    <button class="fab" id="speak" aria-label="Озвучить">🔊</button>
+    <div class="card" id="card" role="button" tabindex="0" aria-label="Перевернуть карточку">
+      <div class="face front"><div class="word" id="de"></div><div class="hint">Нажмите, чтобы увидеть перевод</div></div>
+      <div class="face back"><div class="word" id="ru"></div></div>
+    </div>
+  </div>
+  <nav>
+    <button class="btn prev" id="prev">← Назад</button>
+    <div class="counter" id="counter"></div>
+    <button class="btn next" id="next">Вперёд →</button>
+  </nav>
+  <div class="know"><button class="btn again" id="again">😕 Повторить</button><button class="btn knowb" id="know">✅ Знаю</button></div>
+  <div class="legend">🔵 der · 🔴 die · 🟢 das</div>
+  <div class="tools"><button class="shuffle" id="dirBtn"></button><button class="shuffle" id="shuffle">🔀 Перемешать</button><button class="shuffle" id="quizBtn">🎯 Тест</button><button class="shuffle" id="guideBtn">📖 Как читать</button><button class="shuffle" id="bgBtn"></button></div>
+</main>
+
+<section id="gr" class="screen" hidden></section>
+<section id="ai" class="screen" hidden></section>
+<section id="me" class="screen" hidden></section>
+<div id="tabs"><button data-t="w" class="on">📇 Слова</button><button data-t="g">📘 Грамматика</button><button data-t="a">💬 ИИ</button><button data-t="p">👤 Прогресс</button></div>
+<div id="modal" hidden><div class="sheet" id="sheet"></div></div>
+<script>
+  // Слова из тетради. Формат строки: немецкое | перевод | категория (категорию можно не указывать)
+  const RAW = `
+fragen | спрашивать | Глаголы
+lieben | любить | Глаголы
+leben | жить | Глаголы
+heißen | называться | Глаголы
+ich | я | Местоимения
+du | ты | Местоимения
+er | он | Местоимения
+sie | она / они | Местоимения
+es | оно | Местоимения
+wir | мы | Местоимения
+ihr | вы | Местоимения
+Sie | Вы (вежливое) | Местоимения
+dich | тебя | Местоимения
+nicht | не | Наречия
+in | в | Предлоги
+lachen | смеяться | Глаголы
+gern (gerne) | люблю, нравиться, с удовольствием | Наречия
+gut | хорошо | Прилагательные
+fotografieren | фотографировать | Глаголы
+lernen | учить, учиться | Глаголы
+Ja | Да | Фразы и выражения
+Nein | Нет | Фразы и выражения
+mich | меня | Местоимения
+schön | красиво, красивый | Прилагательные
+tanzen | танцевать | Глаголы
+Tschüß | Пока | Фразы и выражения
+das Büro, -s | офис | Существительные
+Hallo | Привет, Здравствуйте | Фразы и выражения
+Guten Abend | Добрый вечер | Фразы и выражения
+machen | делать | Глаголы
+heute | сегодня | Наречия
+arbeiten | работать | Глаголы
+und | и | 
+antworten | отвечать | Глаголы
+Was | Что | Местоимения
+Wo | Где | Наречия
+Auch | Тоже | Наречия
+Wohnen | Жить, проживать | Глаголы
+Guten Morgen | Доброе утро | Фразы и выражения
+Guten Tag | Добрый день | Фразы и выражения
+Schönen guten Tag | Прекрасного хорошего дня | Фразы и выражения
+Moin | Привет (на севере) | Фразы и выражения
+Grüß Gott | Привет (на юге) | Фразы и выражения
+Auf Wiedersehen | До свидания | Фразы и выражения
+Auf Wiederhören | До свидания (по тел.) | Фразы и выражения
+Schönen Abend noch | Хорошего вечера | Фразы и выражения
+Schönes Wochenende | Хороших выходных | Фразы и выражения
+Gute Nacht | Спокойной ночи | Фразы и выражения
+Bis später | Увидимся (через некоторое время) | Фразы и выражения
+Bis bald | Увидимся скоро | Фразы и выражения
+Bis gleich | Увидимся (почти сразу) | Фразы и выражения
+Danke schön | Большое спасибо | Фразы и выражения
+Bitte schön | Пожалуйста | Фразы и выражения
+Vielen Dank | Большое спасибо | Фразы и выражения
+Entschuldigung | Извините | Фразы и выражения
+ich verstehe nicht | я не понимаю | Фразы и выражения
+ich verstehe Sie | я вас понимаю | Фразы и выражения
+Sprechen Sie Englisch? | Вы говорите по-английски? | Фразы и выражения
+froh | радостный | Прилагательные
+müde | уставший | Прилагательные
+noch | ещё | Наречия
+satt | сытый | Прилагательные
+fertig | готов | Прилагательные
+schon | уже | Наречия
+wie | сколько / как | Наречия
+fantastisch | фантастически | Прилагательные
+interessant | интересно | Прилагательные
+Das | Это | Местоимения
+schlecht | плохо | Прилагательные
+sehr | очень | Наречия
+das Kind | ребёнок | Существительные
+der Mann | мужчина | Существительные
+die Frau | женщина | Существительные
+das Buch | книга | Существительные
+der Eimer | ведро | Существительные
+die Tasse | кружка / чашка | Существительные
+wer | кто | Местоимения
+der Optimismus | оптимизм | Существительные
+der Tourismus | туризм | Существительные
+das Mädchen | девушка | Существительные
+der Junge | мальчик | Существительные
+das Brot | хлеб | Существительные
+die Wohnung | квартира | Существительные
+die Zeitung | газета | Существительные
+der Tee | чай | Существительные
+der Tisch | стол | Существительные
+die Bäckerei | пекарня | Существительные
+der Hund | собака | Существительные
+die Katze | кошка | Существительные
+der Kaffee | кофе | Существительные
+mein / meine | мой / моя | Местоимения
+die Mutter / Mama | мать / мама | Существительные
+die Hand | рука | Существительные
+alle zusammen | все вместе | Фразы и выражения
+Hallo alle zusammen! | Привет всем! | Фразы и выражения
+dein / deine | твой | Местоимения
+kein / keine | никакой (отрицание) | Местоимения
+der Lehrer | учитель | Существительные
+die Lehrerin | учительница | Существительные
+spricht | говорить | Глаголы
+woher | откуда | Наречия
+kommen | приходить, приезжать | Глаголы
+aus | из | Предлоги
+das Leben | жизнь | Существительные
+von | от, о | Предлоги
+der Beruf | профессия | Существительные
+der Herr | господин | Существительные
+die Zeit | время | Существительные
+viel | много | Наречия
+der Hunger | голод | Существительные
+der Durst | жажда | Существительные
+viel zu tun | много дел | Фразы и выражения
+nichts | ничего / ничто | Местоимения
+die Angst | страх | Существительные
+die Freizeit | свободное время | Существительные
+der Freund | друг | Существительные
+Niemand | Никто | Местоимения
+Warum | Почему | Наречия
+da | там, тут | Наречия
+die Straße | улица | Существительные
+die Stadt | город | Существительные
+mögen | нравиться, любить | Глаголы
+spielen | играть | Глаголы
+kaufen | покупать | Глаголы
+kennen | знать кого-то / быть знакомым | Глаголы
+Wen | кого | Местоимения
+mit | с; при помощи | Предлоги
+bei | у, при, во время, у кого-то | Предлоги
+zu | к, в | Предлоги
+für | для, за | Предлоги
+ohne | без | Предлоги
+spazieren | гулять | Глаголы
+wohin | куда | Наречия
+die Schule | школа | Существительные
+der Laden | магазин | Существительные
+zur / auf Arbeit | на работу | Фразы и выражения
+nach Hause | домой | Фразы и выражения
+mir | мне | Местоимения
+der Bruder | брат | Существительные
+verheiratet | женатый | Прилагательные
+geschieden | разведённый | Прилагательные
+ledig | холостой, незамужняя | Прилагательные
+jetzt | сейчас | Наречия
+Aber | Но | 
+oft | часто | Наречия
+oder | или | 
+früh | рано | Наречия
+danach | после этого | Наречия
+frei | свободен | Прилагательные
+Wann | Когда | Наречия
+der Montag | Понедельник | Существительные
+der Dienstag | Вторник | Существительные
+der Mittwoch | Среда | Существительные
+der Donnerstag | Четверг | Существительные
+der Freitag | Пятница | Существительные
+der Samstag / Sonnabend | Суббота | Существительные
+der Sonntag | Воскресенье | Существительные
+jeden | каждый | Местоимения
+die Woche | неделя | Существительные
+die Uhren | часы | Существительные
+rund um die Uhr | круглосуточно | Фразы и выражения
+die Stunde | час | Существительные
+die Leute | люди | Существительные
+helfen | помогать | Глаголы
+geben | давать; передавать | Глаголы
+die Blume | цветок | Существительные
+die Hexe | ведьма | Существительные
+schenken | дарить, делать подарок | Глаголы
+bis | до | Предлоги
+durch | через | Предлоги
+gegen | против | Предлоги
+um | вокруг | Предлоги
+nach | после | Предлоги
+langweilig | скучный, нудный / скучно | Прилагательные
+bleiben | оставаться | Глаголы
+achtung | внимание! (осторожно) / уважение (почтение) | Фразы и выражения
+die Wand | стена | Существительные
+herum | вокруг, кругом, около | Наречия
+ab | с (будущее) | Предлоги
+seit | с (прошлое) | Предлоги
+außer | кроме | Предлоги
+gegenüber | напротив | Предлоги
+können | мочь, уметь | Глаголы
+wollen | хотеть, желать, намереваться | Глаголы
+der Unterricht | урок, занятие | Существительные
+Französisch | французский | Прилагательные
+die Brille | очки | Существительные
+die Reise | путешествие | Существительные
+immer | всегда | Наречия
+überhaupt | вообще, совсем | Наречия
+nehmen | брать; взять | Глаголы
+endlich | наконец | Наречия
+lieber | лучше (предпочтительнее) | Наречия
+die Lebensmittel | продукты | Существительные
+stehen | стоять | Глаголы
+rufen | звать | Глаголы
+manchmal | иногда, порой | Наречия
+holen | приносить, приводить | Глаголы
+natürlich | конечно, естественно | Наречия
+aufmachen | открывать | Глаголы
+zumachen | закрыть | Глаголы
+das Fenster | окно, витрина | Существительные
+die Tür | дверь | Существительные
+anfangen | начинать | Глаголы
+öffnen | открывать, отворять | Глаголы
+schließen | закрывать, затворять | Глаголы
+beginnen | начинать, начинаться | Глаголы
+null | ноль | Числительные
+eins | один | Числительные
+zwei | два | Числительные
+drei | три | Числительные
+vier | четыре | Числительные
+fünf | пять | Числительные
+sechs | шесть | Числительные
+sieben | семь | Числительные
+acht | восемь | Числительные
+neun | девять | Числительные
+zehn | десять | Числительные
+blau | синий, голубой | Прилагательные
+braun | коричневый | Прилагательные
+gelb | жёлтый | Прилагательные
+grau | серый | Прилагательные
+grün | зелёный | Прилагательные
+lila | фиолетовый, сиреневый | Прилагательные
+orange | оранжевый | Прилагательные
+rosa | розовый | Прилагательные
+rot | красный | Прилагательные
+schwarz | чёрный | Прилагательные
+weiß | белый | Прилагательные
+der Norden | север | Существительные
+der Süden | юг | Существительные
+der Osten | восток | Существительные
+der Westen | запад | Существительные
+Deutschland | Германия | Существительные
+Österreich | Австрия | Существительные
+die Schweiz | Швейцария | Существительные
+Luxemburg | Люксембург | Существительные
+Europa | Европа | Существительные
+deutsch | немецкий | Прилагательные
+auf Deutsch | на немецком языке | Фразы и выражения
+der Karneval | карнавал | Существительные
+Ostern | Пасха | Существительные
+Weihnachten | Рождество | Существительные
+Neujahr / Silvester | Новый год / Канун Нового года | Существительные
+der Frühling / das Frühjahr | весна | Существительные
+der Sommer | лето | Существительные
+der Herbst | осень | Существительные
+der Winter | зима | Существительные
+der Tag | день | Существительные
+täglich | ежедневно | Наречия
+tagsüber | в течение дня | Наречия
+der Morgen | утро | Существительные
+morgens | по утрам | Наречия
+der Vormittag | время до полудня | Существительные
+der Mittag | полдень | Существительные
+mittags | в полдень | Наречия
+der Nachmittag | время после полудня | Существительные
+der Abend | вечер | Существительные
+abends | по вечерам | Наречия
+die Nacht | ночь | Существительные
+nachts | ночью | Наречия
+die Mitternacht | полночь | Существительные
+um Mitternacht | в полночь | Фразы и выражения
+am Wochenende | на выходных | Фразы и выражения
+der Arbeitstag / der Werktag | рабочий день | Существительные
+der Feiertag | праздничный день | Существительные
+die Sekunde | секунда | Существительные
+die Minute | минута | Существительные
+der Monat | месяц | Существительные
+das Jahr | год | Существительные
+halb vier | полчетвёртого (15:30) | Фразы и выражения
+Viertel nach zehn | четверть после десяти (10:15) | Фразы и выражения
+Viertel vor sieben | без четверти семь (6:45) | Фразы и выражения
+fünf nach zwei | пять минут третьего (14:05) | Фразы и выражения
+fünf vor drei | без пяти три (14:55) | Фразы и выражения
+zwanzig vor neun | без двадцати девять (20:40) | Фразы и выражения
+erste | первый | Числительные
+zweite | второй | Числительные
+dritte | третий | Числительные
+vierte | четвёртый | Числительные
+erstens | во-первых | Числительные
+zweitens | во-вторых | Числительные
+drittens | в-третьих | Числительные
+einmal | один раз | Числительные
+zweimal | два раза | Числительные
+dreimal | три раза | Числительные
+das Abitur | аттестат зрелости | Существительные
+der Direktor | директор | Существительные
+die Hausaufgabe | домашнее задание | Существительные
+die Klasse | класс | Существительные
+die Klassenfahrt | школьная поездка | Существительные
+das Sekretariat | секретариат | Существительные
+der Stundenplan | расписание уроков | Существительные
+Biologie / Chemie / Physik | биология / химия / физика | Существительные
+Deutsch / Englisch / Latein | немецкий / английский / латынь | Существительные
+Geografie / Geschichte | география / история | Существительные
+Kunst / Musik / Sport | искусство / музыка / физкультура | Существительные
+Mathematik | математика | Существительные
+Religion / Sozialkunde | религия / обществознание | Существительные
+der Euro / der Cent | евро / цент | Существительные
+der Franken / der Rappen | франк / раппен | Существительные
+der Meter | метр | Существительные
+das Prozent | процент | Существительные
+der Liter | литр | Существительные
+das Gramm / das Kilogramm | грамм / килограмм | Существительные
+Grad Celsius | градусы Цельсия | Существительные
+der Angestellte | служащий | Существительные
+der Arzt / die Ärztin | врач | Существительные
+der Auszubildende | ученик, стажёр | Существительные
+der Autor | автор, писатель | Существительные
+der Babysitter | няня | Существительные
+der Bäcker | пекарь | Существительные
+der Doktor | доктор | Существительные
+der Fahrer | водитель | Существительные
+der Friseur | парикмахер | Существительные
+der Handwerker | ремесленник, мастер | Существительные
+der Hausmann / die Hausfrau | домохозяин / домохозяйка | Существительные
+der Journalist | журналист | Существительные
+der Kaufmann | коммерсант | Существительные
+der Kellner | официант | Существительные
+der Koch | повар | Существительные
+der Krankenpfleger | медбрат | Существительные
+die Krankenschwester | медсестра | Существительные
+der Künstler | художник, артист | Существительные
+der Mechaniker | механик | Существительные
+das Model | модель | Существительные
+der Musiker | музыкант | Существительные
+der Polizist | полицейский | Существительные
+der Rentner | пенсионер | Существительные
+der Sänger | певец | Существительные
+der Schauspieler | актёр | Существительные
+der Techniker | техник | Существительные
+der Verkäufer | продавец | Существительные
+der Cousin / die Cousine | двоюродный брат / сестра | Существительные
+die Eltern | родители | Существительные
+der Enkel / die Enkelin | внук / внучка | Существительные
+die Geschwister | братья и сёстры | Существительные
+die Großeltern | бабушка и дедушка | Существительные
+die Großmutter | бабушка | Существительные
+der Großvater | дедушка | Существительные
+die Mutter | мать | Существительные
+der Vater | отец | Существительные
+der Onkel | дядя | Существительные
+die Tante | тётя | Существительные
+die Tochter | дочь | Существительные
+elf | одиннадцать | Числительные
+zwölf | двенадцать | Числительные
+dreizehn | тринадцать | Числительные
+vierzehn | четырнадцать | Числительные
+fünfzehn | пятнадцать | Числительные
+zwanzig | двадцать | Числительные
+dreißig | тридцать | Числительные
+vierzig | сорок | Числительные
+fünfzig | пятьдесят | Числительные
+hundert | сто | Числительные
+tausend | тысяча | Числительные
+der Januar | январь | Существительные
+der Februar | февраль | Существительные
+der März | март | Существительные
+der April | апрель | Существительные
+der Mai | май | Существительные
+der Juni | июнь | Существительные
+der Juli | июль | Существительные
+der August | август | Существительные
+der September | сентябрь | Существительные
+der Oktober | октябрь | Существительные
+der November | ноябрь | Существительные
+der Dezember | декабрь | Существительные
+das Wasser | вода | Существительные
+die Milch | молоко | Существительные
+der Saft | сок | Существительные
+das Bier | пиво | Существительные
+der Wein | вино | Существительные
+der Käse | сыр | Существительные
+die Wurst | колбаса | Существительные
+das Fleisch | мясо | Существительные
+der Fisch | рыба | Существительные
+das Gemüse | овощи | Существительные
+das Obst | фрукты | Существительные
+der Apfel | яблоко | Существительные
+die Banane | банан | Существительные
+die Kartoffel | картофель | Существительные
+die Tomate | помидор | Существительные
+das Ei | яйцо | Существительные
+der Reis | рис | Существительные
+die Nudeln | макароны, лапша | Существительные
+die Suppe | суп | Существительные
+der Salat | салат | Существительные
+der Zucker | сахар | Существительные
+das Salz | соль | Существительные
+das Frühstück | завтрак | Существительные
+das Mittagessen | обед | Существительные
+das Abendessen | ужин | Существительные
+das Restaurant | ресторан | Существительные
+die Rechnung | счёт | Существительные
+der Kopf | голова | Существительные
+das Auge | глаз | Существительные
+das Ohr | ухо | Существительные
+die Nase | нос | Существительные
+der Mund | рот | Существительные
+das Haar | волосы | Существительные
+der Arm | рука (от плеча) | Существительные
+das Bein | нога | Существительные
+der Fuß | ступня | Существительные
+das Herz | сердце | Существительные
+die Hose | брюки | Существительные
+das Hemd | рубашка | Существительные
+die Jacke | куртка | Существительные
+der Mantel | пальто | Существительные
+der Schuh | ботинок, туфля | Существительные
+das Kleid | платье | Существительные
+die Tasche | сумка | Существительные
+das Haus | дом | Существительные
+das Zimmer | комната | Существительные
+die Küche | кухня | Существительные
+das Bett | кровать | Существительные
+der Stuhl | стул | Существительные
+der Schlüssel | ключ | Существительные
+der Garten | сад | Существительные
+das Telefon | телефон | Существительные
+das Handy | мобильный телефон | Существительные
+der Computer | компьютер | Существительные
+das Auto | машина | Существительные
+der Bus | автобус | Существительные
+der Zug | поезд | Существительные
+der Bahnhof | вокзал | Существительные
+der Flughafen | аэропорт | Существительные
+das Flugzeug | самолёт | Существительные
+das Fahrrad | велосипед | Существительные
+das Taxi | такси | Существительные
+die Haltestelle | остановка | Существительные
+die Fahrkarte | билет (на транспорт) | Существительные
+der Supermarkt | супермаркет | Существительные
+die Bank | банк | Существительные
+die Post | почта | Существительные
+die Apotheke | аптека | Существительные
+das Krankenhaus | больница | Существительные
+der Park | парк | Существительные
+das Kino | кино | Существительные
+das Museum | музей | Существительные
+das Hotel | гостиница | Существительные
+der Markt | рынок | Существительные
+das Wetter | погода | Существительные
+die Sonne | солнце | Существительные
+der Regen | дождь | Существительные
+der Schnee | снег | Существительные
+der Wind | ветер | Существительные
+der Himmel | небо | Существительные
+der Baum | дерево | Существительные
+das Meer | море | Существительные
+der Berg | гора | Существительные
+der See | озеро | Существительные
+der Sohn | сын | Существительные
+die Schwester | сестра | Существительные
+die Familie | семья | Существительные
+der Mensch | человек | Существительные
+der Name | имя, название | Существительные
+der Nachbar | сосед | Существительные
+das Geld | деньги | Существительные
+das Geschenk | подарок | Существительные
+das Problem | проблема | Существительные
+die Frage | вопрос | Существительные
+die Hilfe | помощь | Существительные
+das Glück | счастье, удача | Существительные
+sein | быть | Глаголы
+haben | иметь | Глаголы
+gehen | идти, ходить | Глаголы
+fahren | ехать | Глаголы
+sehen | видеть | Глаголы
+hören | слышать, слушать | Глаголы
+sprechen | говорить | Глаголы
+sagen | сказать | Глаголы
+essen | есть, кушать | Глаголы
+trinken | пить | Глаголы
+schlafen | спать | Глаголы
+schreiben | писать | Глаголы
+lesen | читать | Глаголы
+laufen | бежать, ходить пешком | Глаголы
+sitzen | сидеть | Глаголы
+liegen | лежать | Глаголы
+warten | ждать | Глаголы
+suchen | искать | Глаголы
+finden | находить | Глаголы
+brauchen | нуждаться, требоваться | Глаголы
+bringen | приносить | Глаголы
+zeigen | показывать | Глаголы
+kosten | стоить | Глаголы
+zahlen | платить | Глаголы
+bestellen | заказывать | Глаголы
+wissen | знать (факт) | Глаголы
+denken | думать | Глаголы
+glauben | верить, полагать | Глаголы
+singen | петь | Глаголы
+kochen | готовить, варить | Глаголы
+waschen | мыть, стирать | Глаголы
+treffen | встречать | Глаголы
+besuchen | посещать | Глаголы
+reisen | путешествовать | Глаголы
+fliegen | летать | Глаголы
+schwimmen | плавать | Глаголы
+studieren | учиться (в вузе) | Глаголы
+verstehen | понимать | Глаголы
+vergessen | забывать | Глаголы
+weinen | плакать | Глаголы
+groß | большой, высокий | Прилагательные
+klein | маленький | Прилагательные
+neu | новый | Прилагательные
+alt | старый | Прилагательные
+jung | молодой | Прилагательные
+schnell | быстрый, быстро | Прилагательные
+langsam | медленный, медленно | Прилагательные
+teuer | дорогой | Прилагательные
+billig | дешёвый | Прилагательные
+richtig | правильный | Прилагательные
+falsch | неправильный | Прилагательные
+leicht | лёгкий | Прилагательные
+schwer | тяжёлый, трудный | Прилагательные
+hell | светлый | Прилагательные
+dunkel | тёмный | Прилагательные
+voll | полный | Прилагательные
+leer | пустой | Прилагательные
+warm | тёплый | Прилагательные
+kalt | холодный | Прилагательные
+heiß | горячий, жаркий | Прилагательные
+krank | больной | Прилагательные
+gesund | здоровый | Прилагательные
+glücklich | счастливый | Прилагательные
+traurig | грустный | Прилагательные
+nett | милый, приятный | Прилагательные
+lustig | весёлый, смешной | Прилагательные
+wichtig | важный | Прилагательные
+laut | громкий | Прилагательные
+leise | тихий | Прилагательные
+lang | длинный | Прилагательные
+kurz | короткий | Прилагательные
+hungrig | голодный | Прилагательные
+durstig | испытывающий жажду | Прилагательные
+hier | здесь | Наречия
+dort | там | Наречия
+links | слева, налево | Наречия
+rechts | справа, направо | Наречия
+geradeaus | прямо | Наречия
+oben | наверху | Наречия
+unten | внизу | Наречия
+morgen | завтра | Наречия
+gestern | вчера | Наречия
+nie | никогда | Наречия
+selten | редко | Наречия
+vielleicht | возможно | Наречия
+zusammen | вместе | Наречия
+allein | один, в одиночестве | Наречия
+genug | достаточно | Наречия
+wieder | снова | Наречия
+nur | только | Наречия
+mehr | больше | Наречия
+weniger | меньше | Наречия
+alles | всё | Наречия
+etwas | что-то | Наречия
+Wie geht's? | Как дела? | Фразы и выражения
+Mir geht es gut. | У меня всё хорошо. | Фразы и выражения
+Wie heißt du? | Как тебя зовут? | Фразы и выражения
+Ich heiße ... | Меня зовут ... | Фразы и выражения
+Woher kommst du? | Откуда ты? | Фразы и выражения
+Ich komme aus ... | Я из ... | Фразы и выражения
+Wie viel kostet das? | Сколько это стоит? | Фразы и выражения
+Ich möchte ... | Я хотел(а) бы ... | Фразы и выражения
+Ich habe Hunger. | Я голоден. | Фразы и выражения
+Ich weiß nicht. | Я не знаю. | Фразы и выражения
+Noch einmal, bitte. | Ещё раз, пожалуйста. | Фразы и выражения
+Langsam, bitte. | Помедленнее, пожалуйста. | Фразы и выражения
+Wo ist die Toilette? | Где туалет? | Фразы и выражения
+Hilfe! | Помогите! | Фразы и выражения
+Viel Glück! | Удачи! | Фразы и выражения
+Alles Gute! | Всего хорошего! | Фразы и выражения
+Herzlichen Glückwunsch! | Поздравляю! | Фразы и выражения
+Guten Appetit! | Приятного аппетита! | Фразы и выражения
+Prost! | За здоровье! (тост) | Фразы и выражения
+Gute Reise! | Счастливого пути! | Фразы и выражения
+Gesundheit! | Будь здоров! | Фразы и выражения
+Kein Problem. | Без проблем. | Фразы и выражения
+Gern geschehen. | Пожалуйста (в ответ на «спасибо»). | Фразы и выражения
+Danke | Спасибо | Фразы и выражения
+Bitte | Пожалуйста, прошу | Фразы и выражения
+Genau! | Точно! | Фразы и выражения
+Stimmt. | Верно. | Фразы и выражения
+Leider | К сожалению | Фразы и выражения
+Schade! | Жаль! | Фразы и выражения
+Tut mir leid. | Мне жаль. | Фразы и выражения
+Wie bitte? | Как, простите? | Фразы и выражения
+`;
+  const SH = { N: "Существительные", V: "Глаголы", A: "Прилагательные", D: "Наречия", F: "Фразы и выражения", Z: "Числительные", P: "Предлоги", M: "Местоимения" };
+  const X2 = (window.EXTRA2 || "").split("\n").filter(l => l.trim()).map(l => { const [a, b, c] = l.split("|"); return a + " | " + b + " | " + (SH[c] || ""); }).join("\n");
+  const seen = new Set();
+  const ALL = (RAW + "\n" + (window.EXTRA || "") + "\n" + X2).split("\n").filter(l => l.trim()).map(l => {
+    const [de, ru, cat] = l.split(" | ");
+    return { de: de.trim(), ru: ru.trim(), cat: (cat || "").trim() };
+  }).filter(w => !seen.has(w.de) && seen.add(w.de));
+
+  // Наборы в выпадающем списке. Пустые категории скрываются сами.
+  const CATEGORIES = ["Существительные", "Прилагательные", "Глаголы", "Местоимения",
+                      "Наречия", "Предлоги", "Числительные", "Фразы и выражения"];
+  let known = new Set();
+  try { known = new Set(JSON.parse(localStorage.getItem("known") || "[]")); } catch (e) {}
+  const ART = { der: "#3b82f6", die: "#ff4d6d", das: "#22c55e" };
+  const START = new Set(("Hallo|Guten Morgen|Guten Tag|Guten Abend|Gute Nacht|Tschüß|Auf Wiedersehen|Danke schön|Bitte schön|Entschuldigung|Ja|Nein|ich|du|er|sie|es|wir|ihr|Sie|heißen|Wohnen|kommen|lernen|arbeiten|machen|gut|schlecht|sehr|Auch|und|Aber|nicht|Was|Wo|wer|Warum|Wann|ich verstehe nicht|ich verstehe Sie|Sprechen Sie Englisch?|heute|jetzt|null|eins|zwei|drei|vier|fünf|sechs|sieben|acht|neun|zehn").split("|"));
+  // ===== Уровни открываются по очереди: выучи 80% слов уровня, чтобы открыть следующий =====
+  const UNLOCK = 0.8;
+  const CODES = ["GERMAN-VIP-1"]; // секретный код владельца: впиши его в строку поиска, и откроются все уровни
+  let premium = false;
+  try { premium = localStorage.getItem("premium") === "1"; } catch (e) {}
+  let st = { n: 0, day: "", c: 0 };
+  try { st = Object.assign(st, JSON.parse(localStorage.getItem("st") || "{}")); } catch (e) {}
+
+  // Уровни: A1 — тетрадь и начальные слова, A2 — слова из PDF Goethe A2, B1–C1 — продвинутые
+  const iA = ALL.findIndex(w => w.de === "blau"), iB = ALL.findIndex(w => w.de === "die Tochter");
+  ALL.forEach((w, k) => { w.lvl = k >= iA && k <= iB ? "A2" : "A1"; });
+  `die Erfahrung|опыт|B1
+die Entscheidung|решение|B1
+die Umwelt|окружающая среда|B1
+die Meinung|мнение|B1
+die Gesellschaft|общество|B1
+der Vorschlag|предложение|B1
+die Bewerbung|заявка, резюме|B1
+die Zukunft|будущее|B1
+erreichen|достигать|B1
+verbessern|улучшать|B1
+vorhaben|намереваться|B1
+sich entscheiden|принять решение|B1
+die Voraussetzung|предпосылка|B2
+die Auswirkung|последствие|B2
+die Verantwortung|ответственность|B2
+die Herausforderung|вызов, трудная задача|B2
+die Entwicklung|развитие|B2
+der Standpunkt|точка зрения|B2
+beeinflussen|влиять|B2
+verhandeln|вести переговоры|B2
+bewältigen|справляться|B2
+nachhaltig|устойчивый|B2
+zuverlässig|надёжный|B2
+erforderlich|необходимый|B2
+die Beharrlichkeit|упорство|C1
+die Gelassenheit|невозмутимость|C1
+die Schlagfertigkeit|находчивость|C1
+der Zwiespalt|раздвоенность|C1
+das Fingerspitzengefühl|тонкое чутьё, такт|C1
+hinterfragen|ставить под сомнение|C1
+nachvollziehen|понять, проникнуться|C1
+verwerfen|отвергать|C1
+unabdingbar|непременный|C1
+anspruchsvoll|требовательный, сложный|C1
+vorausschauend|дальновидный|C1
+ausschlaggebend|решающий|C1
+der Urlaub|отпуск|A2
+die Ferien|каникулы|A2
+der Koffer|чемодан|A2
+der Reisepass|загранпаспорт|A2
+das Gleis|путь, платформа|A2
+die Abfahrt|отправление|A2
+die Verspätung|опоздание|A2
+der Termin|встреча, запись на приём|A2
+das Medikament|лекарство|A2
+die Schmerzen|боль|A2
+das Fieber|температура, жар|A2
+der Husten|кашель|A2
+die Erkältung|простуда|A2
+der Zahn|зуб|A2
+der Rücken|спина|A2
+der Preis|цена|A2
+die Kasse|касса|A2
+die Größe|размер, величина|A2
+die Firma|фирма|A2
+der Chef|начальник|A2
+der Kollege|коллега|A2
+das Gehalt|зарплата|A2
+der Vertrag|договор|A2
+die Besprechung|совещание|A2
+die Prüfung|экзамен|A2
+der Kurs|курс|A2
+der Fehler|ошибка|A2
+die Übung|упражнение|A2
+das Wörterbuch|словарь|A2
+der Satz|предложение|A2
+das Wort|слово|A2
+die Miete|арендная плата|A2
+der Balkon|балкон|A2
+das Wohnzimmer|гостиная|A2
+das Schlafzimmer|спальня|A2
+die Treppe|лестница|A2
+die Heizung|отопление|A2
+das Licht|свет|A2
+die Dusche|душ|A2
+der Schrank|шкаф|A2
+der Spiegel|зеркало|A2
+die Pizza|пицца|A2
+der Kuchen|пирог, торт|A2
+das Eis|мороженое, лёд|A2
+die Schokolade|шоколад|A2
+die Marmelade|варенье|A2
+die Erdbeere|клубника|A2
+die Zitrone|лимон|A2
+die Gurke|огурец|A2
+die Zwiebel|лук|A2
+die Karotte|морковь|A2
+der Pilz|гриб|A2
+das Öl|масло (растительное)|A2
+die Gabel|вилка|A2
+der Löffel|ложка|A2
+das Messer|нож|A2
+der Teller|тарелка|A2
+das Glas|стакан, стекло|A2
+die Flasche|бутылка|A2
+die Socke|носок|A2
+die Mütze|шапка|A2
+der Rock|юбка|A2
+der Pullover|свитер|A2
+der Ring|кольцо|A2
+die Uhr|часы, час|A2
+das Pferd|лошадь|A2
+die Kuh|корова|A2
+das Schwein|свинья|A2
+der Vogel|птица|A2
+die Maus|мышь|A2
+das Datum|дата|A2
+der Geburtstag|день рождения|A2
+die Feier|праздник, вечеринка|A2
+die Hochzeit|свадьба|A2
+der Gast|гость|A2
+der Kunde|клиент|A2
+der Student|студент|A2
+der Schüler|школьник|A2
+die Freundin|подруга|A2
+der Ehemann|муж|A2
+die Ehefrau|жена|A2
+abholen|забирать, встречать|A2|V
+ankommen|прибывать|A2|V
+einsteigen|садиться (в транспорт)|A2|V
+aussteigen|выходить (из транспорта)|A2|V
+umsteigen|пересаживаться|A2|V
+einkaufen|делать покупки|A2|V
+aufstehen|вставать|A2|V
+anziehen|надевать|A2|V
+duschen|принимать душ|A2|V
+frühstücken|завтракать|A2|V
+einladen|приглашать|A2|V
+feiern|праздновать|A2|V
+gewinnen|выигрывать|A2|V
+verlieren|терять, проигрывать|A2|V
+gefallen|нравиться|A2|V
+gehören|принадлежать|A2|V
+passen|подходить|A2|V
+schmecken|быть вкусным|A2|V
+regnen|идти (о дожде)|A2|V
+mieten|снимать, арендовать|A2|V
+bekommen|получать|A2|V
+fernsehen|смотреть телевизор|A2|V
+anmelden|регистрировать|A2|V
+mitbringen|приносить с собой|A2|V
+erklären|объяснять|A2|V
+erzählen|рассказывать|A2|V
+benutzen|использовать|A2|V
+ändern|менять|A2|V
+probieren|пробовать|A2|V
+sparen|экономить, копить|A2|V
+verdienen|зарабатывать|A2|V
+parken|парковаться|A2|V
+buchen|бронировать|A2|V
+packen|упаковывать|A2|V
+übernachten|ночевать|A2|V
+ehrlich|честный|A2|A
+freundlich|дружелюбный|A2|A
+fleißig|трудолюбивый|A2|A
+gefährlich|опасный|A2|A
+günstig|выгодный, недорогой|A2|A
+kaputt|сломанный|A2|A
+nass|мокрый|A2|A
+trocken|сухой|A2|A
+sauber|чистый|A2|A
+schmutzig|грязный|A2|A
+sicher|надёжный, уверенный|A2|A
+spät|поздно, поздний|A2|A
+stark|сильный|A2|A
+schwach|слабый|A2|A
+süß|сладкий|A2|A
+sauer|кислый|A2|A
+scharf|острый|A2|A
+einfach|простой|A2|A
+schwierig|трудный|A2|A
+modern|современный|A2|A
+berühmt|известный, знаменитый|A2|A
+die Beziehung|отношения|B1
+die Bedingung|условие|B1
+die Behörde|ведомство, орган власти|B1
+das Ergebnis|результат|B1
+der Eindruck|впечатление|B1
+die Erklärung|объяснение|B1
+die Gelegenheit|возможность, случай|B1
+der Grund|причина, основание|B1
+die Lösung|решение (проблемы)|B1
+die Möglichkeit|возможность|B1
+der Vorteil|преимущество|B1
+der Nachteil|недостаток|B1
+der Unterschied|различие|B1
+die Veränderung|изменение|B1
+die Verbindung|связь, соединение|B1
+die Verabredung|договорённость, свидание|B1
+das Vorstellungsgespräch|собеседование|B1
+das Ziel|цель|B1
+die Wirtschaft|экономика|B1
+ablehnen|отклонять|B1|V
+annehmen|принимать, предполагать|B1|V
+behaupten|утверждать|B1|V
+beschließen|постановить, решить|B1|V
+empfehlen|рекомендовать|B1|V
+enthalten|содержать|B1|V
+erfahren|узнавать|B1|V
+erlauben|разрешать|B1|V
+ermöglichen|делать возможным|B1|V
+fördern|поддерживать, развивать|B1|V
+gelingen|удаваться|B1|V
+genießen|наслаждаться|B1|V
+hoffen|надеяться|B1|V
+nachdenken|размышлять|B1|V
+überlegen|обдумывать|B1|V
+überzeugen|убеждать|B1|V
+unterstützen|поддерживать|B1|V
+vermeiden|избегать|B1|V
+vermuten|предполагать|B1|V
+vorbereiten|подготавливать|B1|V
+vorschlagen|предлагать|B1|V
+zustimmen|соглашаться|B1|V
+teilnehmen|участвовать|B1|V
+sich ärgern|злиться|B1|V
+sich beschweren|жаловаться|B1|V
+sich erinnern|вспоминать|B1|V
+sich interessieren|интересоваться|B1|V
+allgemein|общий, в целом|B1|A
+bereit|готов|B1|A
+deutlich|ясный, отчётливый|B1|A
+eigentlich|собственно, на самом деле|B1|D
+endgültig|окончательный|B1|A
+gleichzeitig|одновременно|B1|D
+kostenlos|бесплатный|B1|A
+notwendig|необходимый|B1|A
+persönlich|личный, лично|B1|A
+selbstständig|самостоятельный|B1|A
+unbedingt|обязательно|B1|D
+vorsichtig|осторожный|B1|A
+wahrscheinlich|вероятно|B1|D
+zufrieden|довольный|B1|A
+zufällig|случайный, случайно|B1|A
+der Ansatz|подход, исходная точка|B2
+der Einfluss|влияние|B2
+die Grundlage|основа|B2
+die Maßnahme|мера, меры|B2
+die Tendenz|тенденция|B2
+der Wandel|перемена, изменение|B2
+die Wahrnehmung|восприятие|B2
+verfügen über|располагать чем-то|B2|V
+berücksichtigen|учитывать|B2|V
+betonen|подчёркивать|B2|V
+durchsetzen|добиваться, проводить в жизнь|B2|V
+entsprechen|соответствовать|B2|V
+erwähnen|упоминать|B2|V
+festlegen|устанавливать|B2|V
+gewährleisten|гарантировать|B2|V
+hervorheben|выделять, подчёркивать|B2|V
+vorantreiben|продвигать|B2|V
+widersprechen|возражать|B2|V
+beitragen|вносить вклад|B2|V
+umsetzen|претворять в жизнь|B2|V
+eindeutig|однозначный|B2|A
+erheblich|значительный|B2|A
+grundsätzlich|принципиальный, в принципе|B2|A
+maßgeblich|определяющий|B2|A
+umfassend|всеобъемлющий|B2|A
+vergleichbar|сопоставимый|B2|A
+zunehmend|всё больше, растущий|B2|A
+die Wechselwirkung|взаимодействие|C1
+die Beschaffenheit|свойства, состояние|C1
+der Missstand|недостаток, неблагополучие|C1
+die Tragweite|значимость, масштаб последствий|C1
+die Zurückhaltung|сдержанность|C1
+die Wertschätzung|уважение, признание|C1
+veranschaulichen|наглядно показывать|C1|V
+bewerkstelligen|осуществить, справиться|C1|V
+beanstanden|выдвигать претензии|C1|V
+durchschauen|видеть насквозь|C1|V
+herbeiführen|вызывать, приводить к|C1|V
+vereiteln|срывать, расстраивать|C1|V
+verkennen|недооценивать, не распознать|C1|V
+zuspitzen|обострять|C1|V
+abwegig|нелепый, ошибочный|C1|A
+beiläufig|мимоходом|C1|A
+stichhaltig|убедительный, обоснованный|C1|A
+nachdrücklich|настойчивый, решительный|C1|A
+schlüssig|логичный, убедительный|C1|A
+unumgänglich|неизбежный|C1|A
+weitreichend|далеко идущий|C1|A
+widersprüchlich|противоречивый|C1|A`.split("\n").forEach(l => {
+    const [de, ru, lvl, c] = l.split("|");
+    if (ALL.some(w => w.de === de)) return;
+    ALL.push({ de, ru, lvl, cat: SH[c] || (/^(der|die|das) /.test(de) ? "Существительные" : "") });
+  });
+  const lvlWords = l => ALL.filter(w => w.lvl === l);
+  const lvlDone = l => lvlWords(l).filter(w => known.has(w.de)).length;
+  const unlocked = l => {
+    const k = LEVELS.findIndex(x => x[0] === l);
+    if (premium || k <= 0) return true;
+    const p = LEVELS[k - 1][0];
+    return unlocked(p) && lvlDone(p) >= Math.ceil(lvlWords(p).length * UNLOCK);
+  };
+  const pool = () => ALL.filter(w => unlocked(w.lvl));
+
+  const LEVELS = [["A1", "🌱", "Путешественник"], ["A2", "🏙️", "Горожанин"], ["B1", "🗣️", "Рассказчик"], ["B2", "💼", "Профессионал"], ["C1", "🎓", "Мастер"]];
+  const DECKS = {}, LVKEY = {};
+  DECKS["📚 Все слова"] = () => pool();
+  DECKS["🌱 Старт для нуля"] = () => ALL.filter(w => START.has(w.de));
+  DECKS["🔁 Не выученные"] = () => { const l = pool().filter(w => !known.has(w.de)); return l.length ? l : [{ de: "🎉 Всё выучено!", ru: "Отличная работа!", cat: "" }]; };
+  LEVELS.forEach(([l, e, n]) => { const k = e + " " + l + " · " + n; DECKS[k] = () => ALL.filter(w => w.lvl === l); LVKEY[k] = l; });
+  CATEGORIES.forEach(c => { DECKS[c] = () => pool().filter(w => w.cat === c); });
+const isLocked = k => LVKEY[k] && !unlocked(LVKEY[k]);
+  let lastU = LEVELS.filter(([l]) => unlocked(l)).length;
+  function fill() {
+    const cur = deckSel.value; deckSel.innerHTML = "";
+    Object.keys(DECKS).forEach(k => {
+      const n = DECKS[k]().length;
+      if (!n) return;
+      deckSel.add(new Option((isLocked(k) ? "🔒 " : "") + k + " (" + (LVKEY[k] ? lvlDone(LVKEY[k]) + "/" : "") + n + ")", k));
+    });
+    if (cur && DECKS[cur]) deckSel.value = cur;
+  }
+
+  const tg = window.Telegram && Telegram.WebApp;
+  if (tg) { tg.ready(); tg.expand(); try { tg.setHeaderColor("#2a1259"); tg.setBackgroundColor("#140a2b"); } catch (e) {} }
+
+  const $ = id => document.getElementById(id);
+  const card = $("card"), deckSel = $("deck");
+  let words = [], i = 0;
+  let rev = false; // false: немецкий → русский, true: русский → немецкий
+  try { rev = localStorage.getItem("dir") === "ru"; } catch (e) {}
+
+  fill();
+
+  let prevKey = "";
+  function loadDeck() {
+    const key = deckSel.value;
+    if (isLocked(key)) { lockInfo(LVKEY[key]); deckSel.value = prevKey || Object.keys(DECKS)[0]; return; }
+    prevKey = key; words = DECKS[key]().slice(); i = 0; render();
+  }
+
+  function render() {
+    card.classList.remove("flipped", "enter");
+    void card.offsetWidth;
+    card.classList.add("enter");
+    const front = rev ? words[i].ru : words[i].de;
+    const back = rev ? words[i].de : words[i].ru;
+    $("de").textContent = front;
+    $("ru").textContent = back;
+    [$("de"), $("ru")].forEach(el => {
+      const n = el.textContent.length;
+      el.style.fontSize = n > 40 ? "22px" : n > 24 ? "28px" : n > 14 ? "36px" : "";
+    });
+    document.documentElement.style.setProperty("--h", (i * 7) % 360);
+    const am = words[i].de.match(/^(der|die|das)\b/i);
+    card.style.setProperty("--art", am ? ART[am[1].toLowerCase()] : "");
+    const dk = words.filter(w => known.has(w.de)).length;
+    $("prog").textContent = "✅ " + dk + " из " + words.length + " выучено · осталось " + (words.length - dk) + " · 🔥 " + st.n + " дн. · сегодня " + st.c + "/10";
+    $("fill").style.width = (words.length ? dk * 100 / words.length : 0) + "%";
+    $("counter").textContent = (i + 1) + " / " + words.length + (known.has(words[i].de) ? " ✅" : "");
+    $("prev").disabled = i === 0;
+    $("next").disabled = i === words.length - 1;
+  }
+
+  function go(step) {
+    const n = i + step;
+    if (n < 0 || n >= words.length) return;
+    i = n; render();
+    if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred("light");
+  }
+  const flip = () => card.classList.toggle("flipped");
+
+  $("prev").onclick = () => go(-1);
+  $("next").onclick = () => go(1);
+  card.onclick = flip;
+  deckSel.onchange = loadDeck;
+  $("shuffle").onclick = () => {
+    for (let k = words.length - 1; k > 0; k--) { const j = Math.floor(Math.random() * (k + 1)); [words[k], words[j]] = [words[j], words[k]]; }
+    i = 0; render();
+  };
+  document.addEventListener("keydown", e => {
+    if (e.key === "ArrowRight") go(1);
+    else if (e.key === "ArrowLeft") go(-1);
+    else if (e.key === " " || e.key === "Enter") { e.preventDefault(); flip(); }
+  });
+
+  // Свайп влево/вправо
+  let x0 = null;
+  card.addEventListener("touchstart", e => { x0 = e.touches[0].clientX; }, { passive: true });
+  card.addEventListener("touchend", e => {
+    if (x0 === null) return;
+    const dx = e.changedTouches[0].clientX - x0;
+    if (Math.abs(dx) > 60) { go(dx < 0 ? 1 : -1); card._swiped = true; setTimeout(() => card._swiped = false, 50); }
+    x0 = null;
+  });
+  card.addEventListener("click", e => { if (card._swiped) { e.stopImmediatePropagation(); } }, true);
+
+  // Немецкие буквы на фоне: только в боковых полях
+  const chars = ["ä", "ö", "ü", "ß", "Ä", "Ö", "Ü", "der", "die", "das", "ja", "nein"];
+  for (let k = 0; k < 12; k++) {
+    const s = document.createElement("span");
+    s.className = "letter";
+    s.textContent = chars[k % chars.length];
+    const left = k % 2 ? Math.random() * 9 : 90 + Math.random() * 6;
+    s.style.left = left + "%";
+    s.style.fontSize = 26 + Math.random() * 26 + "px";
+    s.style.animationDuration = 40 + Math.random() * 30 + "s";
+    s.style.animationDelay = -Math.random() * 60 + "s";
+    $("bg").appendChild(s);
+  }
+
+  // Переключатель фона: спокойный (по умолчанию) / яркий
+  let vivid = false;
+  try { vivid = localStorage.getItem("bg") === "vivid"; } catch (e) {}
+  function applyBg() {
+    document.body.classList.toggle("calm", !vivid);
+    $("bgBtn").textContent = vivid ? "🌙 Спокойный фон" : "✨ Яркий фон";
+  }
+  $("bgBtn").onclick = () => {
+    vivid = !vivid;
+    try { localStorage.setItem("bg", vivid ? "vivid" : "calm"); } catch (e) {}
+    applyBg();
+  };
+  applyBg();
+
+  // Поиск по немецкому и русскому (ä=a, ö=o, ü=u, ß=ss)
+  const norm = t => t.toLowerCase().replace(/ä/g, "a").replace(/ö/g, "o").replace(/ü/g, "u").replace(/ß/g, "ss").replace(/ё/g, "е");
+  const resBox = $("results");
+  $("q").oninput = () => {
+    if (CODES.includes($("q").value.trim())) {
+      premium = true; try { localStorage.setItem("premium", "1"); } catch (e) {}
+      $("q").value = ""; resBox.hidden = true; fill(); lastU = LEVELS.length;
+      tg && tg.showAlert ? tg.showAlert("Режим владельца: все уровни открыты") : alert("Режим владельца: все уровни открыты");
+      return;
+    }
+    const q = norm($("q").value.trim());
+    resBox.innerHTML = "";
+    if (!q) { resBox.hidden = true; return; }
+    const found = pool().filter(w => norm(w.de).includes(q) || norm(w.ru).includes(q));
+    resBox.hidden = false;
+    if (!found.length) { resBox.innerHTML = '<div class="none">Ничего не найдено</div>'; return; }
+    found.slice(0, 30).forEach((w, idx) => {
+      const b = document.createElement("button");
+      b.textContent = w.de + " — " + w.ru;
+      b.onclick = () => { words = found; i = idx; resBox.hidden = true; $("q").value = ""; render(); card.classList.add("flipped"); };
+      resBox.appendChild(b);
+    });
+  };
+  deckSel.addEventListener("change", () => { $("q").value = ""; resBox.hidden = true; });
+
+  // Счётчик пользователей (см. инструкцию): вставь ссылку Apps Script и свой Telegram ID
+  const STATS_URL = "";
+  const OWNER_ID = 0;
+  const me = tg && tg.initDataUnsafe && tg.initDataUnsafe.user;
+  if (STATS_URL && me) {
+    fetch(STATS_URL + "?uid=" + me.id).then(r => r.text()).then(t => {
+      if (me.id === OWNER_ID) { $("stat").textContent = "👥 Пользователей: " + t; $("stat").hidden = false; }
+    }).catch(() => {});
+  }
+
+  // Озвучка немецкого слова
+  $("speak").onclick = () => {
+    if (!window.speechSynthesis) return;
+    const t = words[i].de.replace(/\(.*?\)/g, "").split(" / ")[0].trim();
+    const u = new SpeechSynthesisUtterance(t); u.lang = "de-DE"; u.rate = 0.85;
+    speechSynthesis.cancel(); speechSynthesis.speak(u);
+  };
+
+  // Знаю / Повторить
+  function setKnown(de, flag) {
+    const was = known.has(de);
+    flag ? known.add(de) : known.delete(de);
+    const t = new Date().toISOString().slice(0, 10), y = new Date(Date.now() - 864e5).toISOString().slice(0, 10);
+    if (st.day !== t) { st.n = st.day === y ? st.n + 1 : 1; st.day = t; st.c = 0; }
+    if (flag && !was) st.c++;
+    try { localStorage.setItem("known", JSON.stringify([...known])); localStorage.setItem("st", JSON.stringify(st)); } catch (e) {}
+    const u = LEVELS.filter(([l]) => unlocked(l)).length;
+    if (u !== lastU) {
+      const up = u > lastU; lastU = u; fill();
+      if (up) { const m = "🎉 Открыт уровень " + LEVELS[u - 1][0] + " · " + LEVELS[u - 1][2] + "!"; tg && tg.showAlert ? tg.showAlert(m) : alert(m); }
+    }
+  }
+  const mark = flag => { setKnown(words[i].de, flag); if (i < words.length - 1) go(1); else render(); };
+  $("know").onclick = () => mark(true);
+  $("again").onclick = () => mark(false);
+
+  // Окно (подсказка по чтению и тест)
+  function openModal(html) {
+    $("sheet").innerHTML = html + '<button class="shuffle" id="mclose">Закрыть ✕</button>';
+    $("modal").hidden = false;
+    $("mclose").onclick = () => { $("modal").hidden = true; refreshScreens(); };
+  }
+  $("guideBtn").onclick = () => openModal("<h2>📖 Как читать по-немецки</h2>" + [
+    "<b>ä</b> — как «э»", "<b>ö</b> — как «ё», но губы трубочкой", "<b>ü</b> — как «ю» в слове «тюль»", "<b>ß</b> — как «сс»",
+    "<b>ch</b> — «х» (мягкое после e, i)", "<b>sch</b> — «ш»", "<b>sp-</b> / <b>st-</b> в начале — «шп» / «шт»",
+    "<b>ei</b> — «ай»", "<b>ie</b> — долгое «и»", "<b>eu</b>, <b>äu</b> — «ой»", "<b>v</b> — «ф»", "<b>w</b> — «в»", "<b>z</b> — «ц»",
+    "<b>s</b> перед гласной — «з»", "Все существительные пишутся с большой буквы"
+  ].map(x => "<p>" + x + "</p>").join("") + "<p>🔊 Нажми на кнопку рядом с карточкой, чтобы услышать слово.</p>");
+
+  let qs = { n: 0, ok: 0 };
+  const QN = 10;
+  function quiz() {
+    if (qs.n >= QN) return result();
+    const un = words.filter(w => !known.has(w.de)), src = un.length ? un : words;
+    const w = src[Math.floor(Math.random() * src.length)];
+    const ans = rev ? w.de : w.ru, q = rev ? w.ru : w.de, P = pool();
+    const opts = [ans];
+    while (opts.length < 4) {
+      const o = P[Math.floor(Math.random() * P.length)], t = rev ? o.de : o.ru;
+      if (!opts.includes(t)) opts.push(t);
+    }
+    opts.sort(() => Math.random() - 0.5);
+    openModal("<h2>🎯 Вопрос " + (qs.n + 1) + " из " + QN + "</h2><p>Верно: " + qs.ok + "</p>" + '<div class="qw">' + q + '</div><div id="opts"></div><div id="nx"></div>');
+    opts.forEach(t => {
+      const b = document.createElement("button"); b.className = "opt"; b.textContent = t;
+      b.onclick = () => {
+        qs.n++; const good = t === ans; if (good) qs.ok++;
+        setKnown(w.de, good);
+        [...$("opts").children].forEach(x => { x.disabled = true; if (x.textContent === ans) x.classList.add("ok"); });
+        if (!good) b.classList.add("bad");
+        const nx = document.createElement("button"); nx.className = "shuffle"; nx.textContent = qs.n >= QN ? "Результат →" : "Дальше →"; nx.onclick = quiz;
+        $("nx").appendChild(nx);
+      };
+      $("opts").appendChild(b);
+    });
+  }
+  function result() {
+    const p = Math.round(qs.ok * 100 / QN), dk = words.filter(w => known.has(w.de)).length;
+    const title = p >= 90 ? "🏆 Отлично!" : p >= 70 ? "👍 Хорошо!" : p >= 50 ? "🙂 Неплохо" : "💪 Давай ещё раз";
+    openModal("<h2>" + title + "</h2><p>Правильно: " + qs.ok + " из " + QN + " (" + p + "%)</p><p>В колоде выучено: " + dk + " из " + words.length + "</p><p>Осталось выучить: " + (words.length - dk) + '</p><button class="shuffle" id="again2">🔁 Ещё раунд</button>');
+    $("again2").onclick = () => { qs = { n: 0, ok: 0 }; quiz(); };
+  }
+  function lockInfo(l) {
+    const k = LEVELS.findIndex(x => x[0] === l), p = LEVELS[k - 1][0];
+    const tot = lvlWords(p).length, need = Math.ceil(tot * UNLOCK), done = lvlDone(p);
+    openModal("<h2>🔒 Уровень " + l + " пока закрыт</h2><p>Чтобы открыть его, выучи " + Math.round(UNLOCK * 100) + "% слов уровня " + p + ".</p><p>Выучено: <b>" + done + " из " + need + "</b> нужных (всего в уровне " + tot + ")</p><p>Осталось выучить: <b>" + Math.max(0, need - done) + "</b></p><p>Слово считается выученным, когда ты нажимаешь «✅ Знаю» или отвечаешь верно в тесте.</p>" + '<button class="shuffle" id="go">Перейти к уровню ' + p + "</button>");
+    $("go").onclick = () => { $("modal").hidden = true; deckSel.value = Object.keys(LVKEY).find(x => LVKEY[x] === p); loadDeck(); };
+  }
+  $("quizBtn").onclick = () => { qs = { n: 0, ok: 0 }; quiz(); };
+
+  // ===== Грамматика, прогресс, вкладки =====
+  const GR = [
+{id:"a1-1",l:"A1",t:"Глаголы sein и haben",b:"<p><b>sein</b> (быть): ich bin, du bist, er/sie/es ist, wir sind, ihr seid, sie/Sie sind.</p><p><b>haben</b> (иметь): ich habe, du hast, er hat, wir haben, ihr habt, sie haben.</p><p>Ich bin müde. Er hat einen Hund.</p>",q:[["Ich ___ müde.",["bin","bist","ist"],0],["Er ___ einen Hund.",["habe","hat","haben"],1]]},
+{id:"a1-2",l:"A1",t:"Артикли и род",b:"<p>Три рода: <b>der</b> (м.), <b>die</b> (ж.), <b>das</b> (ср.). Во множественном числе всегда <b>die</b>. Неопределённый артикль: ein (м., ср.), eine (ж.).</p><p>Учи слово сразу с артиклем: цвет рамки карточки подскажет род.</p>",q:[["___ Katze",["der","die","das"],1],["___ Kind",["der","die","das"],2]]},
+{id:"a1-3",l:"A1",t:"Порядок слов: глагол на 2-м месте",b:"<p>Глагол всегда на <b>втором месте</b>: Ich lerne heute Deutsch. Если начать с «heute», подлежащее уходит за глагол: Heute lerne ich Deutsch.</p><p>В вопросе без вопросительного слова глагол первый: Lernst du Deutsch?</p>",q:[["Выбери верный порядок:",["Heute ich lerne Deutsch.","Heute lerne ich Deutsch.","Ich heute lerne Deutsch."],1],["Ich ___ aus Usbekistan.",["komme","kommst","kommt"],0]]},
+{id:"a1-4",l:"A1",t:"Отрицание: nicht и kein",b:"<p><b>kein/keine</b> отрицает существительное: Ich habe kein Auto.</p><p><b>nicht</b> отрицает глагол, прилагательное и всё остальное: Er arbeitet nicht. Das ist nicht gut.</p>",q:[["Ich habe ___ Auto.",["kein","nicht"],0],["Er arbeitet ___.",["kein","nicht"],1]]},
+{id:"a2-1",l:"A2",t:"Perfekt: разговорное прошедшее",b:"<p><b>haben/sein + Partizip II</b>: Ich habe gelernt. Wir haben Pizza gegessen.</p><p>С <b>sein</b> идут глаголы движения и смены состояния: Ich bin gegangen. Er ist gefahren.</p>",q:[["Gestern ___ ich Pizza gegessen.",["habe","bin"],0],["Wir ___ nach Berlin gefahren.",["haben","sind"],1]]},
+{id:"a2-2",l:"A2",t:"Модальные глаголы",b:"<p>können (мочь), müssen (быть должным), wollen (хотеть), dürfen (иметь разрешение), sollen (следует), mögen/möchten.</p><p>Модальный глагол на 2-м месте, <b>смысловой — инфинитив в конце</b>: Ich kann heute nicht kommen. Du musst arbeiten.</p>",q:[["Ich ___ heute arbeiten.",["muss","musst","müssen"],0],["Du ___ hier nicht rauchen.",["darfst","darf","dürfen"],0]]},
+{id:"a2-3",l:"A2",t:"Akkusativ и Dativ",b:"<p><b>Akkusativ</b> (кого? что?): der → <b>den</b>, die → die, das → das. Ich sehe den Mann.</p><p><b>Dativ</b> (кому? чему?): der → <b>dem</b>, die → <b>der</b>, das → <b>dem</b>. Ich helfe dem Mann. Dativ после: mit, bei, nach, von, zu, aus, seit.</p>",q:[["Ich kaufe ___ Hund.",["der","den","dem"],1],["Ich helfe ___ Frau.",["die","der","den"],1]]},
+{id:"b1-1",l:"B1",t:"Придаточные: weil, dass, wenn",b:"<p>В придаточном <b>спрягаемый глагол уходит в конец</b>: Ich bleibe zu Hause, weil ich krank bin. Ich glaube, dass er schon da ist. Wenn es regnet, bleibe ich hier.</p>",q:[["Выбери верно:",["Ich bleibe zu Hause, weil ich krank bin.","Ich bleibe zu Hause, weil bin ich krank.","Ich bleibe zu Hause, weil ich bin krank."],0],["Выбери верно:",["Ich weiß, dass er morgen kommt.","Ich weiß, dass kommt er morgen.","Ich weiß, dass er kommt morgen."],0]]},
+{id:"b1-2",l:"B1",t:"Präteritum: простое прошедшее",b:"<p>Чаще в письме и рассказах. Особые формы: sein → <b>war</b>, haben → <b>hatte</b>, können → konnte, wollen → wollte, gehen → ging. Слабые глаголы: -te (lernen → lernte).</p>",q:[["Gestern ___ ich krank.",["war","bin","wurde"],0],["Er ___ gestern keine Zeit.",["hatte","hat","haben"],0]]},
+{id:"b1-3",l:"B1",t:"Относительные придаточные",b:"<p>Начинаются с относительного местоимения: род и число как у существительного, падеж по роли в придаточном: der Mann, <b>der</b> dort arbeitet; die Frau, <b>die</b> ich sehe; das Buch, <b>das</b> ich lese. Глагол в конце, перед придаточным запятая.</p>",q:[["Das ist der Mann, ___ dort arbeitet.",["der","den","dem"],0],["Das Buch, ___ ich lese, ist gut.",["das","die","der"],0]]},
+{id:"b2-1",l:"B2",t:"Konjunktiv II: нереальное и вежливое",b:"<p>Для нереальных желаний и вежливых просьб: <b>wäre, hätte, würde + инфинитив</b>.</p><p>Wenn ich Zeit hätte, würde ich reisen. Ich hätte gern einen Kaffee. Wenn ich du wäre, würde ich das tun.</p>",q:[["Wenn ich Zeit ___, würde ich reisen.",["hätte","habe","hatte"],0],["Wenn ich du ___, würde ich das tun.",["wäre","bin","war"],0]]},
+{id:"b2-2",l:"B2",t:"Passiv",b:"<p><b>werden + Partizip II</b>: Das Haus wird gebaut. Die Briefe werden geschrieben. Прошедшее: wurde gebaut. Деятель: von + Dativ (von Arbeitern).</p>",q:[["Das Auto ___ repariert.",["wird","ist","hat"],0],["Die Briefe ___ geschrieben.",["werden","wird","sind"],0]]},
+{id:"b2-3",l:"B2",t:"Genitiv и предлоги с Genitiv",b:"<p>Genitiv: <b>des</b> (м., ср.) + окончание -s/-es, <b>der</b> (ж. и мн.). Das Auto des Mannes. Предлоги с Genitiv: wegen, trotz, während, statt: wegen des Regens.</p>",q:[["wegen ___ Wetters",["des","dem","das"],0],["die Tasche ___ Frau",["der","die","den"],0]]},
+{id:"c1-1",l:"C1",t:"Konjunktiv I: косвенная речь",b:"<p>Для передачи чужих слов (СМИ, официальный стиль): Er sagt, er <b>sei</b> krank. Sie sagt, sie <b>habe</b> keine Zeit. Er sagt, er <b>komme</b> morgen.</p><p>Если форма совпадает с Indikativ, используют Konjunktiv II.</p>",q:[["Er sagte, er ___ müde.",["sei","ist","wäre"],0],["Sie sagt, sie ___ keine Zeit.",["habe","hat","hätte"],0]]},
+{id:"c1-2",l:"C1",t:"Funktionsverbgefüge: устойчивые сочетания",b:"<p>Существительное + глагол, типично для делового стиля: eine Entscheidung <b>treffen</b>, in Betracht <b>ziehen</b>, zur Verfügung <b>stellen</b>, Rücksicht <b>nehmen</b>. Запоминай глагол вместе со словом.</p>",q:[["eine Entscheidung ___",["treffen","machen","geben"],0],["zur Verfügung ___",["stellen","legen","setzen"],0]]}
+];
+  const XQ = {
+    "a1-1": [["Wir ___ Freunde.", ["sind", "seid", "bin"], 0], ["Du ___ Zeit.", ["hast", "hat", "habt"], 0]],
+    "a1-2": [["___ Tisch", ["der", "die", "das"], 0], ["Mehrzahl: ___ Bücher", ["der", "die", "das"], 1]],
+    "a1-3": [["___ du Deutsch? (вопрос без слова-вопроса)", ["Lernst", "Du lernst", "Lernt"], 0]],
+    "a1-4": [["Das ist ___ gut.", ["nicht", "kein"], 0]],
+    "a2-1": [["Ich habe das Buch ___.", ["gelesen", "lesen", "geliest"], 0]],
+    "a2-2": [["Er ___ Auto fahren.", ["kann", "kannst", "können"], 0]],
+    "a2-3": [["Ich gehe mit ___ Freund ins Kino.", ["dem", "den", "der"], 0]],
+    "b1-1": [["Ich komme nicht, ___ ich krank bin.", ["weil", "dass", "ob"], 0]],
+    "b1-2": [["Wir ___ früher in Taschkent.", ["wohnten", "wohnen", "gewohnt"], 0]],
+    "b1-3": [["Die Kinder, ___ dort spielen, sind klein.", ["die", "der", "das"], 0]],
+    "b2-1": [["Ich ___ gern mehr Zeit.", ["hätte", "habe", "hatte"], 0]],
+    "b2-2": [["Das Haus ___ 1990 gebaut.", ["wurde", "wird", "ist"], 0]],
+    "b2-3": [["während ___ Sommers", ["des", "dem", "der"], 0]],
+    "c1-1": [["Er sagt, er ___ morgen.", ["komme", "kommt", "käme"], 0]],
+    "c1-2": [["Rücksicht ___", ["nehmen", "geben", "haben"], 0]]
+  };
+  GR.forEach(x => x.q.push(...(XQ[x.id] || [])));
+  GR.push(
+{id:"a1-5",l:"A1",t:"Спряжение глаголов в настоящем времени",b:"<p>Основа + окончание: ich lern<b>e</b>, du lern<b>st</b>, er/sie/es lern<b>t</b>, wir lern<b>en</b>, ihr lern<b>t</b>, sie/Sie lern<b>en</b>.</p><p>Если основа на -t/-d, добавляется -e-: du arbeit<b>e</b>st, er arbeit<b>e</b>t.</p>",q:[["Du ___ Deutsch.",["lernst","lerne","lernt"],0],["Wir ___ in Taschkent.",["wohnen","wohnt","wohne"],0],["Er ___ jeden Tag.",["arbeitet","arbeitt","arbeiten"],0],["Ihr ___ gut.",["spielt","spielen","spiele"],0]]},
+{id:"a1-6",l:"A1",t:"Вопросительные слова (W-Fragen)",b:"<p><b>wer</b> кто, <b>was</b> что, <b>wo</b> где, <b>woher</b> откуда, <b>wohin</b> куда, <b>wann</b> когда, <b>warum</b> почему, <b>wie</b> как. Глагол стоит сразу после вопросительного слова: Wo wohnst du?</p>",q:[["___ wohnst du? — In Taschkent.",["Wo","Woher","Wohin"],0],["___ kommst du? — Aus Usbekistan.",["Woher","Wo","Wann"],0],["___ ist das? — Das ist ein Buch.",["Was","Wer","Wie"],0],["___ heißt du?",["Wie","Wo","Wer"],0]]},
+{id:"a1-7",l:"A1",t:"Притяжательные местоимения",b:"<p><b>mein</b> мой, <b>dein</b> твой, <b>sein</b> его, <b>ihr</b> её, <b>unser</b> наш, <b>euer</b> ваш. Для женского рода и множественного числа окончание -e: meine Mutter, deine Eltern.</p>",q:[["Das ist ___ Mutter. (моя)",["meine","mein","meinen"],0],["___ Bruder arbeitet hier. (твой)",["Dein","Deine","Deinen"],0],["Das ist ___ Haus. (наш)",["unser","unsere","uns"],0],["Wo ist ___ Tasche? (её)",["ihre","ihr","sein"],0]]},
+{id:"a2-4",l:"A2",t:"Глаголы с отделяемой приставкой",b:"<p>aufstehen, anrufen, einkaufen: приставка уходит в конец: Ich <b>stehe</b> um 7 Uhr <b>auf</b>. Er <b>ruft</b> mich <b>an</b>. В Perfekt: -ge- между приставкой и основой: aufgestanden, angerufen.</p>",q:[["Выбери верно:",["Ich stehe um 7 Uhr auf.","Ich aufstehe um 7 Uhr.","Ich stehe auf um 7 Uhr."],0],["Выбери верно:",["Er ruft mich an.","Er anruft mich.","Er mich ruft an."],0],["Sie kauft im Supermarkt ___.",["ein","an","auf"],0],["Ich habe ihn gestern ___.",["angerufen","anrufen","geanrufen"],0]]},
+{id:"a2-5",l:"A2",t:"Предлоги места: Wo? и Wohin?",b:"<p>Предлоги in, auf, an, unter, neben, über, vor, hinter + <b>Dativ</b> на вопрос Wo? (Ich bin in <b>der</b> Küche) и + <b>Akkusativ</b> на вопрос Wohin? (Ich gehe in <b>die</b> Küche).</p>",q:[["Ich bin in ___ Küche. (Wo?)",["der","die","den"],0],["Ich gehe in ___ Küche. (Wohin?)",["die","der","dem"],0],["Das Bild hängt an ___ Wand.",["der","die","dem"],0],["Ich stelle das Glas auf ___ Tisch.",["den","dem","der"],0]]},
+{id:"a2-6",l:"A2",t:"Степени сравнения прилагательных",b:"<p>schön – <b>schöner</b> – am <b>schönsten</b>. Часто с умлаутом: groß – größer – am größten. Исключения: gut – <b>besser</b> – am <b>besten</b>, viel – <b>mehr</b> – am <b>meisten</b>. Сравнение: <b>als</b> (чем), <b>so ... wie</b> (так же, как).</p>",q:[["Er ist ___ als ich.",["größer","groß","am größten"],0],["gut → ___",["besser","guter","mehr"],0],["Das ist der ___ Film. (самый красивый)",["schönste","schöner","schön"],0],["Berlin ist größer ___ Hamburg.",["als","wie","dass"],0]]},
+{id:"b1-4",l:"B1",t:"Склонение прилагательных после артикля",b:"<p>После der/die/das: <b>-e</b> в Nominativ (и Akkusativ ж., ср.), везде остальное <b>-en</b>. der große Mann, die nette Frau, das kleine Kind; Ich sehe den großen Mann; mit dem kleinen Kind.</p>",q:[["der ___ Mann",["große","groß","großen"],0],["Ich sehe den ___ Mann.",["großen","große","groß"],0],["die ___ Frau",["nette","netten","nett"],0],["mit dem ___ Kind",["kleinen","kleine","klein"],0]]},
+{id:"b1-5",l:"B1",t:"Инфинитив с zu и um ... zu",b:"<p>Инфинитивный оборот: Ich habe keine Lust, früh <b>aufzustehen</b>. Цель: <b>um ... zu</b> + инфинитив: Ich lerne Deutsch, <b>um</b> in Deutschland <b>zu</b> arbeiten. У отделяемых глаголов zu встаёт между приставкой и основой.</p>",q:[["Ich lerne, ___ in Deutschland zu arbeiten.",["um","für","damit"],0],["Ich habe Zeit, dich ___ besuchen.",["zu","um","für"],0],["Er geht in die Stadt, um ein Buch ___ kaufen.",["zu","zum","für"],0],["Ich habe keine Lust, früh ___.",["aufzustehen","zu aufstehen","aufstehen zu"],0]]},
+{id:"b1-6",l:"B1",t:"Возвратные глаголы",b:"<p>sich freuen, sich erinnern, sich ärgern, sich interessieren: ich freue <b>mich</b>, du freust <b>dich</b>, er freut <b>sich</b>, wir freuen <b>uns</b>, ihr freut <b>euch</b>, sie freuen <b>sich</b>.</p>",q:[["Ich freue ___ auf den Urlaub.",["mich","dich","sich"],0],["Du ärgerst ___.",["dich","mich","sich"],0],["Er interessiert ___ für Musik.",["sich","ihn","mich"],0],["Wir treffen ___ morgen.",["uns","euch","sich"],0]]},
+{id:"b2-4",l:"B2",t:"Двойные союзы",b:"<p><b>entweder ... oder</b> (или ... или), <b>sowohl ... als auch</b> (и ... и), <b>weder ... noch</b> (ни ... ни), <b>nicht nur ... sondern auch</b> (не только ... но и), <b>je ... desto</b> (чем ... тем).</p>",q:[["Er spricht ___ Deutsch ___ Englisch.",["sowohl ... als auch","entweder ... oder","weder ... noch"],0],["Ich habe ___ Zeit ___ Geld.",["weder ... noch","sowohl ... als auch","entweder ... oder"],0],["Je mehr ich lerne, ___ besser verstehe ich.",["desto","dann","so"],0],["Nicht nur ich, ___ auch er kommt.",["sondern","aber","oder"],0]]},
+{id:"b2-5",l:"B2",t:"Придаточное в начале предложения",b:"<p>Если придаточное стоит <b>первым</b>, то в главном предложении глагол идёт сразу после запятой (инверсия): Weil er müde war, <b>ging er</b> früh ins Bett. Wenn es regnet, <b>bleibe ich</b> zu Hause.</p>",q:[["Weil er müde war, ...",["ging er früh ins Bett.","er ging früh ins Bett."],0],["Wenn es regnet, ...",["bleibe ich zu Hause.","ich bleibe zu Hause."],0],["Obwohl ich krank bin, ...",["gehe ich zur Arbeit.","ich gehe zur Arbeit."],0],["Dass er kommt, ...",["freut mich.","ich freue mich."],0]]},
+{id:"b2-6",l:"B2",t:"Словообразование: существительные",b:"<p>Из глаголов: entscheiden → die Entscheidung, lösen → die Lösung (-ung). Из прилагательных: frei → die Freiheit, möglich → die Möglichkeit (-heit, -keit). Все эти существительные женского рода (die).</p>",q:[["Существительное от «entscheiden»:",["die Entscheidung","das Entscheiden","der Entscheid"],0],["frei → ___",["die Freiheit","die Freiung","das Frei"],0],["möglich → ___",["die Möglichkeit","die Möglichung","das Möglich"],0],["lösen → ___",["die Lösung","die Löschung","das Lösen"],0]]},
+{id:"c1-3",l:"C1",t:"Причастные обороты (Partizipialattribute)",b:"<p>Partizip II = «сделанный»: der gestern <b>gekaufte</b> Wagen (= der Wagen, der gestern gekauft wurde). Partizip I = «делающий»: die <b>lesenden</b> Kinder (= die Kinder, die lesen). Причастие склоняется как прилагательное.</p>",q:[["Купленная вчера машина:",["der gestern gekaufte Wagen","der gestern kaufte Wagen","der gestern kaufende Wagen"],0],["Читающие дети:",["die lesenden Kinder","die gelesenen Kinder","die lesen Kinder"],0],["Открытое окно:",["das geöffnete Fenster","das öffnende Fenster","das öffnet Fenster"],0]]},
+{id:"c1-4",l:"C1",t:"Модальные частицы",b:"<p>Придают речи оттенок: <b>doch</b> (мягко настаивает): Komm doch mal vorbei! <b>ja</b> (ведь, это известно): Das ist ja klar! <b>eben/halt</b> (ничего не поделаешь): Das ist eben so. <b>mal</b> смягчает просьбу.</p>",q:[["Komm ___ mal vorbei! (мягкое побуждение)",["doch","eben","ja"],0],["«Das ist eben so.» значит:",["Ничего не поделаешь","Ровно так","Вчера было так"],0],["Das ist ___ klar! (ведь это очевидно)",["ja","mal","halt"],0]]},
+{id:"c1-5",l:"C1",t:"Konjunktiv II в прошедшем",b:"<p>О несбывшемся: <b>hätte/wäre + Partizip II</b>. Wenn ich das gewusst <b>hätte</b>, <b>wäre</b> ich gekommen. Ich <b>hätte</b> das nie getan.</p>",q:[["Wenn ich das gewusst ___, wäre ich gekommen.",["hätte","habe","hatte"],0],["Wenn er Zeit gehabt hätte, ___ er gekommen.",["wäre","hätte","war"],0],["Ich ___ das nie getan.",["hätte","bin","habe"],0]]}
+  );
+  const RICH = {
+    "a1-1": "<h3>Зачем это нужно</h3><p><b>sein</b> (быть) и <b>haben</b> (иметь) — самые частые глаголы. Они неправильные, их нужно выучить наизусть. Они же помогают строить прошедшее время (Perfekt).</p><table><tr><th>Лицо</th><th>sein</th><th>haben</th><th>lernen (правильный)</th></tr><tr><td>ich</td><td>bin</td><td>habe</td><td>lerne</td></tr><tr><td>du</td><td>bist</td><td>hast</td><td>lernst</td></tr><tr><td>er/sie/es</td><td>ist</td><td>hat</td><td>lernt</td></tr><tr><td>wir</td><td>sind</td><td>haben</td><td>lernen</td></tr><tr><td>ihr</td><td>seid</td><td>habt</td><td>lernt</td></tr><tr><td>sie/Sie</td><td>sind</td><td>haben</td><td>lernen</td></tr></table><h3>Когда что использовать</h3><p><b>sein</b>: профессия, национальность, состояние, возраст: Ich bin Lehrer. Ich bin müde. Ich bin 20 Jahre alt.</p><p><b>haben</b>: обладание и состояния-«ощущения»: Ich habe einen Hund. Ich habe Hunger / Durst / Angst.</p><h3>Частая ошибка</h3><p>Нельзя сказать «Ich habe 20 Jahre». Правильно: <b>Ich bin</b> 20 Jahre alt.</p>",
+    "a1-2": "<h3>Три рода и множественное число</h3><p>У каждого существительного есть род: <b>der</b> (м.), <b>die</b> (ж.), <b>das</b> (ср.). Во мн. числе артикль всегда <b>die</b>. Артикль нужно учить вместе со словом, но есть подсказки по окончаниям:</p><table><tr><th>Окончание</th><th>Род</th><th>Пример</th></tr><tr><td>-ung, -heit, -keit, -schaft, -ion</td><td>die</td><td>die Zeitung, die Freiheit</td></tr><tr><td>-er (профессии), -ling, -ismus</td><td>der</td><td>der Lehrer, der Tourismus</td></tr><tr><td>-chen, -lein, -um</td><td>das</td><td>das Mädchen, das Zentrum</td></tr></table><h3>Падежи: определённый артикль</h3><table><tr><th>Падеж (вопрос)</th><th>м.</th><th>ж.</th><th>ср.</th><th>мн.</th></tr><tr><td>Nominativ (кто? что?)</td><td>der</td><td>die</td><td>das</td><td>die</td></tr><tr><td>Akkusativ (кого? что?)</td><td><b>den</b></td><td>die</td><td>das</td><td>die</td></tr><tr><td>Dativ (кому? чему?)</td><td><b>dem</b></td><td><b>der</b></td><td><b>dem</b></td><td><b>den</b> (+n)</td></tr><tr><td>Genitiv (чей? чего?)</td><td>des (+s)</td><td>der</td><td>des (+s)</td><td>der</td></tr></table><h3>Неопределённый артикль</h3><table><tr><th></th><th>м.</th><th>ж.</th><th>ср.</th></tr><tr><td>Nom.</td><td>ein</td><td>eine</td><td>ein</td></tr><tr><td>Akk.</td><td>einen</td><td>eine</td><td>ein</td></tr><tr><td>Dat.</td><td>einem</td><td>einer</td><td>einem</td></tr></table><p>Пример: Das ist <b>ein</b> Hund. Ich sehe <b>einen</b> Hund. Ich gebe <b>einem</b> Hund Wasser.</p>",
+    "a1-3": "<h3>Главное правило: глагол на втором месте</h3><p>В повествовательном предложении спрягаемый глагол всегда занимает <b>вторую позицию</b> (не второе слово, а вторую смысловую группу).</p><table><tr><th>Позиция 1</th><th>Позиция 2 (глагол)</th><th>Середина</th><th>Конец</th></tr><tr><td>Ich</td><td>lerne</td><td>heute</td><td>Deutsch.</td></tr><tr><td>Heute</td><td>lerne</td><td>ich</td><td>Deutsch.</td></tr><tr><td>Ich</td><td>möchte</td><td>heute</td><td>Deutsch lernen.</td></tr><tr><td>Mein Bruder</td><td>kommt</td><td>morgen</td><td>nach Hause.</td></tr></table><h3>Типы предложений</h3><table><tr><th>Тип</th><th>Схема</th><th>Пример</th></tr><tr><td>Вопрос без вопр. слова</td><td>Глагол + подлежащее</td><td>Lernst du Deutsch?</td></tr><tr><td>Вопрос со словом</td><td>W-слово + глагол + подлежащее</td><td>Wo wohnst du?</td></tr><tr><td>Просьба/приказ</td><td>Глагол на 1-м месте</td><td>Komm bitte!</td></tr></table><h3>Порядок обстоятельств (TeKaMoLo)</h3><p>Время → Причина → Образ действия → Место: Ich fahre <b>morgen</b> (Te) <b>wegen der Arbeit</b> (Ka) <b>mit dem Zug</b> (Mo) <b>nach Berlin</b> (Lo).</p>",
+    "a2-1": "<h3>Как образуется Perfekt</h3><p>Perfekt — разговорное прошедшее. Формула: <b>haben/sein</b> (на 2-м месте) + <b>Partizip II</b> (в конце): Ich habe gestern Pizza gegessen.</p><h3>Образование Partizip II</h3><table><tr><th>Тип</th><th>Схема</th><th>Примеры</th></tr><tr><td>Слабые</td><td>ge-…-t</td><td>lernen → gelernt, machen → gemacht</td></tr><tr><td>Сильные</td><td>ge-…-en (часто смена гласной)</td><td>gehen → gegangen, essen → gegessen, sehen → gesehen</td></tr><tr><td>С приставкой be-, ver-, ent-</td><td>без ge-</td><td>besuchen → besucht, verstehen → verstanden</td></tr><tr><td>На -ieren</td><td>без ge-</td><td>studieren → studiert</td></tr><tr><td>Отделяемые</td><td>приставка + ge + основа</td><td>aufstehen → aufgestanden, anrufen → angerufen</td></tr></table><h3>haben или sein?</h3><p><b>sein</b> — глаголы движения и смены состояния, а также sein, bleiben, werden: Ich bin nach Berlin gefahren. Er ist eingeschlafen. Wir sind zu Hause geblieben.</p><p><b>haben</b> — все остальные: Ich habe das Buch gelesen.</p><p>Порядок слов: Gestern <b>habe</b> ich einen Film <b>gesehen</b>.</p>",
+    "a2-3": "<h3>Что такое падеж</h3><p>Падеж показывает роль слова в предложении. Меняется артикль (а иногда и окончание слова).</p><table><tr><th></th><th>м.</th><th>ж.</th><th>ср.</th><th>мн.</th></tr><tr><td>Akkusativ</td><td>den</td><td>die</td><td>das</td><td>die</td></tr><tr><td>Dativ</td><td>dem</td><td>der</td><td>dem</td><td>den + n</td></tr></table><h3>Какие предлоги с каким падежом</h3><table><tr><th>Падеж</th><th>Предлоги</th></tr><tr><td>Akkusativ</td><td>durch, für, gegen, ohne, um</td></tr><tr><td>Dativ</td><td>aus, bei, mit, nach, seit, von, zu</td></tr></table><h3>Глаголы с Dativ</h3><p>helfen, danken, gefallen, gehören, schmecken: Ich helfe <b>dem</b> Mann. Das Buch gehört <b>der</b> Frau.</p><h3>Два дополнения сразу</h3><p>Dativ (кому) обычно идёт перед Akkusativ (что): Ich gebe <b>dem Mann</b> <b>das Buch</b>. Если Akkusativ — местоимение, то оно первое: Ich gebe <b>es</b> <b>dem Mann</b>.</p>",
+    "b1-1": "<h3>Придаточное предложение</h3><p>В придаточном <b>спрягаемый глагол уходит в самый конец</b>. Перед придаточным ставится запятая.</p><table><tr><th>Союз</th><th>Значение</th><th>Пример</th></tr><tr><td>weil</td><td>потому что</td><td>Ich bleibe hier, weil ich krank bin.</td></tr><tr><td>dass</td><td>что</td><td>Ich glaube, dass er kommt.</td></tr><tr><td>wenn</td><td>если, когда (повторяется)</td><td>Wenn es regnet, bleibe ich hier.</td></tr><tr><td>ob</td><td>ли</td><td>Ich weiß nicht, ob er kommt.</td></tr><tr><td>obwohl</td><td>хотя</td><td>Obwohl ich müde bin, arbeite ich.</td></tr><tr><td>damit</td><td>чтобы (другой субъект)</td><td>Ich helfe dir, damit du fertig wirst.</td></tr></table><h3>Если в придаточном несколько глаголов</h3><p>Спрягаемый глагол — в самом конце: …, weil ich arbeiten <b>muss</b>. …, weil ich gearbeitet <b>habe</b>. …, weil ich früh <b>aufstehe</b> (приставка снова присоединяется).</p><h3>Придаточное первым</h3><p>Тогда в главном предложении глагол идёт сразу после запятой: Weil ich krank bin, <b>bleibe ich</b> zu Hause.</p>"
+  };
+  GR.forEach(x => { if (RICH[x.id]) x.b = RICH[x.id]; });
+  let gp = new Set();
+  try { gp = new Set(JSON.parse(localStorage.getItem("gp") || "[]")); } catch (e) {}
+  function refreshScreens() { render(); if (!$("gr").hidden) renderGr(); if (!$("me").hidden) renderMe(); }
+  function gQuiz(items, title, pass) {
+    let k = 0, ok = 0;
+    const next = () => {
+      if (k >= items.length) {
+        const all = ok >= Math.ceil(items.length * 0.8);
+        if (pass && all) { gp.add(pass); try { localStorage.setItem("gp", JSON.stringify([...gp])); } catch (e) {} }
+        openModal("<h2>" + (all ? "🏆" : "📝") + " " + title + "</h2><p>Правильно: " + ok + " из " + items.length + "</p>" + (pass ? (all ? "<p>✅ Урок пройден!</p>" : "<p>Для зачёта нужно не менее 80% верных ответов. Перечитай правило и попробуй ещё раз.</p>") : ""));
+        return;
+      }
+      const [q, o, a] = items[k], order = o.map((t, i) => i).sort(() => Math.random() - 0.5);
+      openModal("<h2>" + title + "</h2><p>Вопрос " + (k + 1) + " из " + items.length + '</p><div class="qw">' + q + '</div><div id="opts"></div><div id="nx"></div>');
+      order.forEach(i => {
+        const b = document.createElement("button"); b.className = "opt"; b.textContent = o[i];
+        b.onclick = () => {
+          const good = i === a; if (good) ok++; k++;
+          [...$("opts").children].forEach(x => { x.disabled = true; if (x.textContent === o[a]) x.classList.add("ok"); });
+          if (!good) b.classList.add("bad");
+          const nx = document.createElement("button"); nx.className = "shuffle"; nx.textContent = k >= items.length ? "Результат →" : "Дальше →"; nx.onclick = next; $("nx").appendChild(nx);
+        };
+        $("opts").appendChild(b);
+      });
+    };
+    next();
+  }
+  function openLesson(L) {
+    openModal("<h2>📘 " + L.l + " · " + L.t + "</h2>" + L.b + '<button class="shuffle" id="gt">✍️ Пройти мини-тест</button>');
+    $("gt").onclick = () => gQuiz(L.q, L.t, L.id);
+  }
+  function renderGr() {
+    const box = $("gr"), done = GR.filter(x => gp.has(x.id)).length;
+    box.innerHTML = "<h1>📘 Грамматика</h1><p>Пройдено уроков: <b>" + done + " из " + GR.length + '</b></p><div class="pb"><i style="width:' + done * 100 / GR.length + '%"></i></div>';
+    const t = document.createElement("button"); t.className = "opt"; t.textContent = "🎯 Общий тест по грамматике (15 вопросов)";
+    t.onclick = () => gQuiz(GR.filter(x => unlocked(x.l)).flatMap(x => x.q).sort(() => Math.random() - 0.5).slice(0, 15), "Тест по грамматике", null);
+    box.appendChild(t);
+    LEVELS.forEach(([l, e, n]) => {
+      const h = document.createElement("p"); h.innerHTML = "<b>" + e + " " + l + " · " + n + "</b>"; box.appendChild(h);
+      GR.filter(x => x.l === l).forEach(x => {
+        const lock = !unlocked(l), b = document.createElement("button"); b.className = "opt";
+        b.textContent = (lock ? "🔒 " : gp.has(x.id) ? "✅ " : "📖 ") + x.t;
+        b.onclick = () => lock ? lockInfo(l) : openLesson(x); box.appendChild(b);
+      });
+    });
+  }
+  function renderMe() {
+    let h = "<h1>👤 Мой прогресс</h1><p>🔥 Серия: <b>" + st.n + "</b> дн. · сегодня выучено: <b>" + st.c + "</b></p><p>✅ Всего слов выучено: <b>" + known.size + "</b> из " + ALL.length + "</p>";
+    LEVELS.forEach(([l, e, n]) => {
+      const t = lvlWords(l).length, d = lvlDone(l), g = GR.filter(x => x.l === l), gd = g.filter(x => gp.has(x.id)).length;
+      h += "<p><b>" + (unlocked(l) ? "" : "🔒 ") + e + " " + l + " · " + n + "</b><br>Слова: " + d + " из " + t + " · Грамматика: " + gd + " из " + g.length + '</p><div class="pb"><i style="width:' + (t ? d * 100 / t : 0) + '%"></i></div>';
+    });
+    $("me").innerHTML = h;
+  }
+  // ===== ИИ-собеседник (нужен адрес твоего прокси, см. инструкцию) =====
+  const AI_URL = "";
+  let chat = [{ r: "bot", t: "Hallo! Ich bin dein Gesprächspartner. Wie heißt du? Und woher kommst du?" }], aiLevel = "A1", aiBusy = false;
+  const aiWords = () => pool().filter(w => !known.has(w.de)).slice(0, 5).map(w => w.de.replace(/^(der|die|das) /, ""));
+  const esc = t => t.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+  function logFill() {
+    $("log").innerHTML = chat.map(m => '<div class="msg ' + (m.r === "me" ? "me" : "bot") + '">' + esc(m.t) + "</div>").join("");
+    if ($("log").lastElementChild) $("log").lastElementChild.scrollIntoView({ block: "end" });
+  }
+  function renderAi() {
+    const lv = LEVELS.filter(([l]) => unlocked(l)).map(([l]) => "<option" + (l === aiLevel ? " selected" : "") + ">" + l + "</option>").join("");
+    $("ai").innerHTML = '<h1>💬 ИИ-собеседник</h1><p>Уровень беседы: <select id="aiLvl">' + lv + "</select></p><p>Постарайся использовать слова: <b>" + aiWords().join(", ") + '</b></p><div id="log"></div><div class="aiRow"><input id="aiIn" class="opt" placeholder="Schreib auf Deutsch…" autocomplete="off"><button id="aiGo" class="btn knowb">➤</button></div><p style="opacity:.7;font-size:13px">ИИ мягко исправит ошибки (строка ✏️) и задаст встречный вопрос.</p>';
+    $("aiLvl").onchange = () => { aiLevel = $("aiLvl").value; };
+    $("aiGo").onclick = aiSend;
+    $("aiIn").onkeydown = e => { if (e.key === "Enter") aiSend(); };
+    logFill();
+  }
+  async function aiSend() {
+    const t = $("aiIn").value.trim();
+    if (!t || aiBusy) return;
+    chat.push({ r: "me", t }); $("aiIn").value = ""; logFill();
+    if (!AI_URL) { chat.push({ r: "bot", t: "ИИ ещё не подключён: впиши адрес в строку AI_URL в файле (инструкция в чате)." }); logFill(); return; }
+    aiBusy = true; chat.push({ r: "bot", t: "…" }); logFill();
+    try {
+      const res = await fetch(AI_URL, { method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ level: aiLevel, words: aiWords(), messages: chat.slice(1, -1).map(m => ({ role: m.r === "me" ? "user" : "assistant", content: m.t })) }) });
+      const d = await res.json(); chat[chat.length - 1].t = d.reply || "Fehler. Versuch es noch einmal.";
+    } catch (e) { chat[chat.length - 1].t = "Нет связи. Попробуй ещё раз."; }
+    aiBusy = false; logFill();
+  }
+  function show(n) {
+    document.querySelector("header").hidden = n !== "w"; document.querySelector("main").hidden = n !== "w";
+    $("gr").hidden = n !== "g"; $("me").hidden = n !== "p"; $("ai").hidden = n !== "a";
+    document.querySelectorAll("#tabs button").forEach(b => b.classList.toggle("on", b.dataset.t === n));
+    if (n === "g") renderGr(); if (n === "p") renderMe(); if (n === "a") renderAi();
+  }
+  document.querySelectorAll("#tabs button").forEach(b => b.onclick = () => show(b.dataset.t));
+
+  // Переключатель направления: 🇩🇪 → 🇷🇺 / 🇷🇺 → 🇩🇪
+  function applyDir() { $("dirBtn").textContent = rev ? "🇷🇺 → 🇩🇪" : "🇩🇪 → 🇷🇺"; }
+  $("dirBtn").onclick = () => {
+    rev = !rev;
+    try { localStorage.setItem("dir", rev ? "ru" : "de"); } catch (e) {}
+    applyDir();
+    render();
+  };
+  applyDir();
+
+  loadDeck();
+</script>
+</body>
+</html>
