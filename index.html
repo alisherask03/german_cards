@@ -3,16 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>Немецкий тренажёр A1–B1</title>
+<title>Немецкий язык: Полный гид и тесты (A1–C1)</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
   :root {
-    --ink: #1c1233;
+    --ink: #140d24;
     --paper: #ffffff;
     --pink: #ff3d8b;
     --amber: #ffb627;
     --teal: #19d3c5;
-    --violet: #6a3dff;
+    --violet: #7c3aed;
     --tab-h: 74px;
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -23,7 +23,7 @@
     min-height: 100dvh;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     color: #ffffff;
-    background: #140a2b;
+    background: #0f071e;
     overflow-x: hidden;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
@@ -33,47 +33,44 @@
     padding: 14px 14px calc(var(--tab-h) + 28px + env(safe-area-inset-bottom, 0px));
   }
 
-  /* Декоративный фон без перекрытия текста */
-  .bg { position: fixed; inset: 0; z-index: 0; overflow: hidden; background: #140a2b; pointer-events: none; }
-  .blob { position: absolute; border-radius: 50%; filter: blur(65px); opacity: 0.45; }
-  .b1 { width: 320px; height: 320px; top: -100px; left: -100px; background: #ff3d8b; }
-  .b2 { width: 340px; height: 340px; bottom: -110px; right: -110px; background: #19d3c5; }
+  .bg { position: fixed; inset: 0; z-index: 0; overflow: hidden; background: #0f071e; pointer-events: none; }
+  .blob { position: absolute; border-radius: 50%; filter: blur(75px); opacity: 0.35; }
+  .b1 { width: 350px; height: 350px; top: -100px; left: -100px; background: #7c3aed; }
+  .b2 { width: 380px; height: 380px; bottom: -120px; right: -120px; background: #19d3c5; }
 
   header, main, .screen { position: relative; z-index: 2; width: 100%; max-width: 480px; }
 
   h1 {
-    font-size: 22px; margin: 2px 0 12px; text-align: center;
-    color: #ffffff; text-shadow: 0 2px 8px rgba(255,61,139,0.6);
+    font-size: 21px; margin: 2px 0 12px; text-align: center;
+    color: #ffffff; text-shadow: 0 2px 8px rgba(124,58,237,0.6);
   }
 
-  /* Фильтры и поиск */
   .filters { display: grid; grid-template-columns: 1fr 1.5fr; gap: 8px; margin-bottom: 8px; }
   select, input[type="search"], input[type="text"] {
     width: 100%; min-height: 46px; padding: 10px 12px; border-radius: 14px;
-    border: 2px solid rgba(255,255,255,0.3); background: #231542;
+    border: 2px solid rgba(255,255,255,0.25); background: #1c1135;
     color: #ffffff; font-size: 15px; outline: none;
   }
-  select option { background: #1c1233; color: #ffffff; }
+  select option { background: #1c1135; color: #ffffff; }
   select:focus, input:focus { border-color: var(--teal); }
 
   #results {
-    margin-top: 6px; max-height: 36vh; overflow-y: auto; border-radius: 14px;
-    background: #1f133b; border: 1.5px solid rgba(255,255,255,0.25);
+    margin-top: 6px; max-height: 38vh; overflow-y: auto; border-radius: 14px;
+    background: #180e30; border: 1.5px solid rgba(255,255,255,0.2);
   }
   #results button {
     display: flex; justify-content: space-between; align-items: center; width: 100%;
     min-height: 46px; text-align: left; padding: 10px 14px; background: none; border: 0;
-    border-bottom: 1px solid rgba(255,255,255,0.12); color: #ffffff; font-size: 14px; cursor: pointer;
+    border-bottom: 1px solid rgba(255,255,255,0.1); color: #ffffff; font-size: 14px; cursor: pointer;
   }
-  .badge { font-size: 11px; padding: 3px 8px; border-radius: 8px; background: rgba(25,211,197,0.25); font-weight: 700; color: #19d3c5; }
+  .badge { font-size: 11px; padding: 3px 8px; border-radius: 8px; background: rgba(25,211,197,0.2); font-weight: 700; color: #19d3c5; }
 
-  .stat { text-align: center; font-size: 13px; color: #f3f4f6; margin-top: 6px; font-weight: 600; }
-  #bar { height: 8px; border-radius: 8px; background: rgba(255,255,255,0.2); margin: 6px 0 12px; overflow: hidden; }
+  .stat { text-align: center; font-size: 13px; color: #e2e8f0; margin-top: 6px; font-weight: 600; }
+  #bar { height: 8px; border-radius: 8px; background: rgba(255,255,255,0.15); margin: 6px 0 12px; overflow: hidden; }
   #fill { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--teal), var(--amber), var(--pink)); transition: width 0.4s; }
 
-  /* Карточка */
   main { display: flex; flex-direction: column; gap: 12px; }
-  .scene { position: relative; width: 100%; height: clamp(200px, 29vh, 250px); perspective: 1200px; }
+  .scene { position: relative; width: 100%; height: clamp(210px, 30vh, 260px); perspective: 1200px; }
   .fab {
     position: absolute; top: 12px; right: 12px; z-index: 6; width: 48px; height: 48px;
     border-radius: 50%; border: 3px solid var(--ink); background: var(--teal);
@@ -83,7 +80,7 @@
   .fab:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
   .card-lvl {
     position: absolute; top: 14px; left: 16px; z-index: 4; font-size: 12px; font-weight: 800;
-    padding: 4px 10px; border-radius: 10px; background: #eef2ff; color: var(--ink);
+    padding: 4px 10px; border-radius: 10px; background: #f3f4f6; color: var(--ink);
   }
   .card {
     position: relative; width: 100%; height: 100%; transform-style: preserve-3d;
@@ -93,87 +90,92 @@
   .face {
     position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden;
     border-radius: 24px; display: flex; flex-direction: column; align-items: center; justify-content: center;
-    padding: 20px; text-align: center; box-shadow: 0 12px 28px rgba(0,0,0,0.4);
+    padding: 20px; text-align: center; box-shadow: 0 12px 30px rgba(0,0,0,0.45);
   }
-  .front { background: #ffffff; color: #1c1233; border: 5px solid var(--art, #1c1233); }
-  .back { background: linear-gradient(135deg, #ffb627, #ff3d8b); color: #1c1233; border: 5px solid var(--art, #1c1233); transform: rotateY(180deg); }
-  .word { font-size: clamp(26px, 8vw, 40px); font-weight: 900; line-height: 1.15; word-break: break-word; color: #1c1233; }
+  .front { background: #ffffff; color: var(--ink); border: 5px solid var(--art, var(--ink)); }
+  .back { background: linear-gradient(135deg, #ffb627, #ff3d8b); color: var(--ink); border: 5px solid var(--art, var(--ink)); transform: rotateY(180deg); }
+  .word { font-size: clamp(24px, 7.5vw, 38px); font-weight: 900; line-height: 1.15; word-break: break-word; color: #140d24; }
   .hint { margin-top: 12px; font-size: 13px; color: #6b7280; font-weight: 600; }
 
-  /* Кнопки управления */
   nav, .know { display: flex; align-items: center; gap: 10px; width: 100%; }
   .btn {
-    flex: 1; min-height: 52px; padding: 12px 8px; font-size: 16px; font-weight: 800; color: #1c1233;
-    border: 3px solid #1c1233; border-radius: 16px; cursor: pointer; box-shadow: 0 5px 0 #1c1233;
+    flex: 1; min-height: 52px; padding: 12px 8px; font-size: 16px; font-weight: 800; color: var(--ink);
+    border: 3px solid var(--ink); border-radius: 16px; cursor: pointer; box-shadow: 0 5px 0 var(--ink);
   }
-  .btn:active { transform: translateY(4px); box-shadow: 0 1px 0 #1c1233; }
+  .btn:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--ink); }
   .btn:disabled { opacity: 0.45; }
   .prev { background: var(--teal); }
   .next { background: var(--amber); }
   .again { background: var(--pink); color: #ffffff; }
   .knowb { background: #3ddc84; }
   .counter { min-width: 82px; text-align: center; font-weight: 800; font-size: 15px; color: #ffffff; }
-  .legend { font-size: 12px; color: #e5e7eb; text-align: center; }
+  .legend { font-size: 12px; color: #cbd5e1; text-align: center; }
 
   .tools { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .tool-btn {
-    min-height: 46px; padding: 10px; background: #231542;
-    border: 1.5px solid rgba(255,255,255,0.3); color: #ffffff; border-radius: 14px;
+    min-height: 46px; padding: 10px; background: #1c1135;
+    border: 1.5px solid rgba(255,255,255,0.25); color: #ffffff; border-radius: 14px;
     font-size: 14px; font-weight: 700; cursor: pointer;
   }
-  .tool-btn:active { background: #311e5c; }
+  .tool-btn:active { background: #2a1a4a; }
 
-  /* Нижняя панель навигации */
   #tabs {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
     height: calc(var(--tab-h) + env(safe-area-inset-bottom, 0px));
-    display: flex; justify-content: center; gap: 6px;
-    padding: 8px 10px calc(8px + env(safe-area-inset-bottom, 0px));
-    background: #100724; border-top: 1px solid rgba(255,255,255,0.2);
+    display: flex; justify-content: center; gap: 5px;
+    padding: 8px 6px calc(8px + env(safe-area-inset-bottom, 0px));
+    background: #0b0517; border-top: 1px solid rgba(255,255,255,0.15);
   }
   #tabs button {
-    flex: 1; max-width: 120px; min-height: 52px; border-radius: 14px;
-    border: 2px solid transparent; background: none; color: #d1d5db;
-    font-size: 12px; font-weight: 700; cursor: pointer;
+    flex: 1; max-width: 95px; min-height: 52px; border-radius: 12px;
+    border: 2px solid transparent; background: none; color: #94a3b8;
+    font-size: 11px; font-weight: 700; cursor: pointer;
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
   }
-  #tabs button.on { background: rgba(25,211,197,0.16); border-color: var(--teal); color: var(--teal); }
+  #tabs button.on { background: rgba(25,211,197,0.15); border-color: var(--teal); color: var(--teal); }
 
   /* Грамматика */
   details.gr-card {
-    background: #20133d; border: 1.5px solid rgba(255,255,255,0.25);
-    border-radius: 16px; margin-bottom: 10px; overflow: hidden; color: #ffffff;
+    background: #180e30; border: 1.5px solid rgba(255,255,255,0.2);
+    border-radius: 16px; margin-bottom: 12px; overflow: hidden; color: #ffffff;
   }
   details.gr-card summary {
-    padding: 15px 16px; font-size: 16px; font-weight: 800; cursor: pointer;
+    padding: 16px; font-size: 16px; font-weight: 800; cursor: pointer;
     list-style: none; display: flex; justify-content: space-between; align-items: center; min-height: 54px;
   }
-  details.gr-card[open] summary { border-bottom: 1px solid rgba(255,255,255,0.2); color: var(--amber); }
-  .gr-body { padding: 14px 16px; font-size: 14px; line-height: 1.55; color: #f3f4f6; }
-  .gr-body h4 { margin: 12px 0 6px; color: var(--teal); font-size: 15px; }
+  details.gr-card[open] summary { border-bottom: 1px solid rgba(255,255,255,0.15); color: var(--amber); }
+  .gr-body { padding: 16px; font-size: 14px; line-height: 1.6; color: #e2e8f0; }
+  .gr-body h4 { margin: 14px 0 6px; color: var(--teal); font-size: 15px; }
   .gr-body p { margin: 6px 0; }
-  .tbl-wrap { overflow-x: auto; margin: 8px 0; }
-  table.gtbl { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 300px; color: #ffffff; }
-  table.gtbl th, table.gtbl td { border: 1px solid rgba(255,255,255,0.25); padding: 7px 8px; text-align: left; }
-  table.gtbl th { background: rgba(255,255,255,0.12); color: var(--amber); }
-  .ex-box { background: rgba(25,211,197,0.14); border-left: 3px solid var(--teal); padding: 8px 10px; border-radius: 8px; margin: 8px 0; color: #ffffff; }
+  .tbl-wrap { overflow-x: auto; margin: 10px 0; }
+  table.gtbl { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 320px; color: #ffffff; }
+  table.gtbl th, table.gtbl td { border: 1px solid rgba(255,255,255,0.2); padding: 8px 10px; text-align: left; }
+  table.gtbl th { background: rgba(255,255,255,0.1); color: var(--amber); }
+  .ex-box { background: rgba(25,211,197,0.12); border-left: 3px solid var(--teal); padding: 10px 12px; border-radius: 8px; margin: 10px 0; color: #ffffff; }
 
-  /* ИИ-собеседник */
+  /* Тесты */
+  .test-box { background: #180e30; border: 1.5px solid rgba(255,255,255,0.2); border-radius: 18px; padding: 16px; margin-bottom: 14px; }
+  .test-q { font-size: 15px; font-weight: 700; margin-bottom: 12px; color: #fff; }
+  .test-opt { display: block; width: 100%; padding: 10px 14px; margin: 6px 0; border-radius: 12px; border: 1.5px solid rgba(255,255,255,0.25); background: #22153f; color: #fff; text-align: left; font-size: 14px; cursor: pointer; font-weight: 600; }
+  .test-opt.correct { background: #1f9d55 !important; border-color: #3ddc84 !important; }
+  .test-opt.wrong { background: #b3263e !important; border-color: #ff5a73 !important; }
+
+  /* ИИ-чат */
   .ai-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
   #chatLog {
     min-height: 38vh; max-height: 48vh; overflow-y: auto; padding: 12px;
-    border-radius: 18px; background: #1d1138; border: 1.5px solid rgba(255,255,255,0.25);
+    border-radius: 18px; background: #160c2b; border: 1.5px solid rgba(255,255,255,0.2);
     display: flex; flex-direction: column; gap: 10px;
   }
-  .msg { padding: 11px 14px; border-radius: 16px; max-width: 88%; font-size: 14px; line-height: 1.45; color: #ffffff; }
+  .msg { padding: 12px 14px; border-radius: 16px; max-width: 88%; font-size: 14px; line-height: 1.5; color: #ffffff; }
   .msg.me { background: #2563eb; align-self: flex-end; border-bottom-right-radius: 4px; }
-  .msg.bot { background: #2d1d52; align-self: flex-start; border-bottom-left-radius: 4px; }
+  .msg.bot { background: #261647; align-self: flex-start; border-bottom-left-radius: 4px; }
   .msg .tip { margin-top: 6px; padding-top: 6px; border-top: 1px dashed rgba(255,255,255,0.3); font-size: 12.5px; color: var(--amber); }
   .msg .ru-tr { display: block; margin-top: 4px; font-size: 12.5px; color: #cbd5e1; }
   .quick-replies { display: flex; gap: 6px; overflow-x: auto; padding: 8px 0; }
   .chip {
     white-space: nowrap; min-height: 38px; padding: 6px 12px; border-radius: 20px;
-    background: #26174a; border: 1px solid rgba(255,255,255,0.3);
+    background: #21133f; border: 1px solid rgba(255,255,255,0.25);
     color: #ffffff; font-size: 13px; cursor: pointer;
   }
   .ai-input-row { display: flex; gap: 8px; margin-top: 6px; }
@@ -181,17 +183,17 @@
 
   /* Модальное окно */
   #modal {
-    position: fixed; inset: 0; z-index: 50; background: rgba(10,5,24,0.88);
+    position: fixed; inset: 0; z-index: 50; background: rgba(10,5,24,0.9);
     display: flex; align-items: center; justify-content: center; padding: 16px;
   }
   .sheet {
     width: 100%; max-width: 460px; max-height: 85dvh; overflow-y: auto;
-    background: #1c1233; border: 2px solid rgba(255,255,255,0.3); border-radius: 22px; padding: 18px; color: #ffffff;
+    background: #1c1135; border: 2px solid rgba(255,255,255,0.25); border-radius: 22px; padding: 18px; color: #ffffff;
   }
   .opt {
     display: block; width: 100%; min-height: 50px; margin: 8px 0; padding: 12px;
-    font-size: 16px; font-weight: 700; border-radius: 14px; border: 2px solid rgba(255,255,255,0.3);
-    background: #28194a; color: #ffffff; cursor: pointer; text-align: left;
+    font-size: 16px; font-weight: 700; border-radius: 14px; border: 2px solid rgba(255,255,255,0.25);
+    background: #261647; color: #ffffff; cursor: pointer; text-align: left;
   }
   .opt.ok { background: #1f9d55; border-color: #3ddc84; }
   .opt.bad { background: #b3263e; border-color: #ff5a73; }
@@ -201,17 +203,19 @@
 <div class="bg"><div class="blob b1"></div><div class="blob b2"></div></div>
 
 <header id="hdr">
-  <h1>🇩🇪 Немецкий тренажёр</h1>
+  <h1>🇩🇪 Тренажёр и Тесты (A1–C1)</h1>
   <div class="filters">
     <select id="lvlSel" aria-label="Уровень">
-      <option value="ALL">Все уровни</option>
+      <option value="ALL">Все уровни (A1-C1)</option>
       <option value="A1">Уровень A1</option>
       <option value="A2">Уровень A2</option>
       <option value="B1">Уровень B1</option>
+      <option value="B2">Уровень B2</option>
+      <option value="C1">Уровень C1</option>
     </select>
     <select id="catSel" aria-label="Категория"></select>
   </div>
-  <input id="q" type="search" placeholder="🔍 Поиск слова (DE / RU)..." autocomplete="off">
+  <input id="q" type="search" placeholder="🔍 Поиск по базе слов (DE / RU)..." autocomplete="off">
   <div id="results" hidden></div>
   <div id="prog" class="stat"></div>
   <div id="bar"><i id="fill"></i></div>
@@ -250,8 +254,14 @@
 </main>
 
 <section id="gr" class="screen" hidden>
-  <h1>📘 Подробная грамматика</h1>
+  <h1>📘 Глубокий справочник грамматики</h1>
   <div id="grContent"></div>
+</section>
+
+<section id="ts" class="screen" hidden>
+  <h1>📝 Интерактивные тесты базы</h1>
+  <div style="margin-bottom: 12px; font-size: 13px; color: #cbd5e1; text-align: center;">Проверьте свои знания по грамматике и лексике уровней A1–C1:</div>
+  <div id="testsContainer"></div>
 </section>
 
 <section id="ai" class="screen" hidden>
@@ -262,11 +272,11 @@
       <option value="Lukas">👨 Lukas (Собеседник)</option>
     </select>
     <select id="aiTopic">
-      <option value="intro">👋 Знакомство (A1)</option>
-      <option value="cafe">☕ В кафе / ресторане (A1)</option>
-      <option value="shop">🛍 Покупки в магазине (A1–A2)</option>
-      <option value="work">💼 Работа и учёба (A2)</option>
-      <option value="travel">✈️ Путешествия и город (A2–B1)</option>
+      <option value="intro">👋 Знакомство и о себе (A1)</option>
+      <option value="cafe">☕ В ресторане / кафе (A1-A2)</option>
+      <option value="shop">🛍 Покупки и сервис (A2)</option>
+      <option value="work">💼 Карьера и собеседование (B1)</option>
+      <option value="society">🌍 Общество и дискуссия (B2-C1)</option>
     </select>
   </div>
   <div id="chatLog"></div>
@@ -278,13 +288,14 @@
 </section>
 
 <section id="me" class="screen" hidden>
-  <h1>👤 Ваш прогресс</h1>
+  <h1>👤 Ваш личный прогресс</h1>
   <div id="meStats"></div>
 </section>
 
 <div id="tabs">
   <button data-t="w" class="on">📇<span>Слова</span></button>
   <button data-t="g">📘<span>Грамматика</span></button>
+  <button data-t="t">📝<span>Тесты</span></button>
   <button data-t="a">💬<span>ИИ-чат</span></button>
   <button data-t="p">👤<span>Прогресс</span></button>
 </div>
@@ -312,7 +323,7 @@ können | мочь, уметь | Глаголы | A1
 wollen | хотеть | Глаголы | A1
 müssen | быть должным | Глаголы | A1
 dürfen | иметь разрешение | Глаголы | A1
-sollen | следовать, быть должным | Глаголы | A1
+sollen | следовать (по совету) | Глаголы | A1
 werden | становиться | Глаголы | A1
 lassen | оставлять, позволять | Глаголы | A2
 sehen | видеть | Глаголы | A1
@@ -323,7 +334,7 @@ trinken | пить | Глаголы | A1
 schlafen | спать | Глаголы | A1
 schreiben | писать | Глаголы | A1
 lesen | читать | Глаголы | A1
-laufen | бежать, ходить пешком | Глаголы | A1
+laufen | бежать, ходить | Глаголы | A1
 sitzen | сидеть | Глаголы | A1
 liegen | лежать | Глаголы | A1
 stehen | стоять | Глаголы | A1
@@ -340,7 +351,7 @@ bestellen | заказывать | Глаголы | A1
 kaufen | покупать | Глаголы | A1
 verkaufen | продавать | Глаголы | A1
 wissen | знать (факт) | Глаголы | A1
-kennen | знать (кого-то/что-то) | Глаголы | A1
+kennen | знать (кого-то) | Глаголы | A1
 denken | думать | Глаголы | A1
 glauben | верить, полагать | Глаголы | A1
 verstehen | понимать | Глаголы | A1
@@ -354,9 +365,14 @@ verbessern | улучшать | Глаголы | A2
 vorbereiten | подготавливать | Глаголы | A2
 teilnehmen | принимать участие | Глаголы | B1
 stattfinden | состояться | Глаголы | A2
-untersuchen | исследовать, осматривать | Глаголы | A2
+untersuchen | исследовать | Глаголы | A2
 überzeugen | убеждать | Глаголы | B1
 vertrauen | доверять | Глаголы | B1
+bezweifeln | сомневаться | Глаголы | B2
+berücksichtigen | принимать во внимание | Глаголы | B2
+verwirklichen | претворять в жизнь | Глаголы | C1
+widersprechen | возражать, противоречить | Глаголы | B2
+vernachlässigen | пренебрегать | Глаголы | C1
 der Mann | мужчина | Существительные | A1
 die Frau | женщина | Существительные | A1
 das Kind | ребёнок | Существительные | A1
@@ -382,15 +398,14 @@ die Arbeit | работа | Существительные | A1
 der Beruf | профессия | Существительные | A1
 das Büro | офис | Существительные | A1
 die Schule | школа | Существительные | A1
-der Unterricht | урок, занятие | Существительные | A1
+die Unterricht | урок | Существительные | A1
 die Stadt | город | Существительные | A1
 die Straße | улица | Существительные | A1
 der Bahnhof | вокзал | Существительные | A1
 der Flughafen | аэропорт | Существительные | A1
 das Flugzeug | самолёт | Существительные | A1
-der Zug | поезд | Существительные | A1
 das Auto | машина | Существительные | A1
-der Bus | автобус | Существительные | A1
+das Bus | автобус | Существительные | A1
 das Fahrrad | велосипед | Существительные | A1
 die Fahrkarte | билет | Существительные | A1
 der Reisepass | загранпаспорт | Существительные | A1
@@ -426,11 +441,16 @@ die Verantwortung | ответственность | Существительн�
 die Entscheidung | решение | Существительные | B1
 die Entwicklung | развитие | Существительные | B1
 die Möglichkeit | возможность | Существительные | A2
-die Gesellschaft | общество, компания | Существительные | B1
+die Gesellschaft | общество | Существительные | B1
 die Wirtschaft | экономика | Существительные | B1
 die Umwelt | окружающая среда | Существительные | A2
-gut | хороший, хорошо | Прилагательные | A1
-schlecht | плохой, плохо | Прилагательные | A1
+der Fortschritt | прогресс | Существительные | B2
+die Herausforderung | вызов | Существительные | B2
+die Voraussetzung | условие | Существительные | B2
+die Meinungsfreiheit | свобода слова | Существительные | C1
+der Sachverhalt | обстоятельство | Существительные | C1
+gut | хороший | Прилагательные | A1
+schlecht | плохой | Прилагательные | A1
 groß | большой | Прилагательные | A1
 klein | маленький | Прилагательные | A1
 neu | новый | Прилагательные | A1
@@ -442,7 +462,7 @@ wichtig | важный | Прилагательные | A1
 richtig | правильный | Прилагательные | A1
 falsch | неправильный | Прилагательные | A1
 leicht | лёгкий | Прилагательные | A1
-schwer | тяжёлый, трудный | Прилагательные | A1
+schwer | тяжёлый | Прилагательные | A1
 einfach | простой | Прилагательные | A1
 schwierig | сложный | Прилагательные | A2
 teuer | дорогой | Прилагательные | A1
@@ -470,6 +490,11 @@ zuverlässig | надёжный | Прилагательные | B1
 erfolgreich | успешный | Прилагательные | B1
 notwendig | необходимый | Прилагательные | B1
 unabhängig | независимый | Прилагательные | B1
+anspruchsvoll | требовательный | Прилагательные | B2
+offensichtlich | очевидный | Прилагательные | B2
+nachhaltig | устойчивый | Прилагательные | B2
+unverzichtbar | незаменимый | Прилагательные | C1
+kontrovers | спорный | Прилагательные | C1
 heute | сегодня | Наречия | A1
 morgen | завтра | Наречия | A1
 gestern | вчера | Наречия | A1
@@ -482,28 +507,30 @@ nie | никогда | Наречия | A1
 sehr | очень | Наречия | A1
 gern | с удовольствием | Наречия | A1
 zusammen | вместе | Наречия | A1
-allein | один, в одиночестве | Наречия | A1
-sofort | немедленно, сразу | Наречия | A1
+allein | один | Наречия | A1
+sofort | немедленно | Наречия | A1
 endlich | наконец | Наречия | A2
-plötzlich | вдруг, внезапно | Наречия | A2
-eigentlich | собственно говоря | Наречия | A2
+plötzlich | вдруг | Наречия | A2
+eigentlich | собственно | Наречия | A2
 deshalb | поэтому | Наречия | A2
 trotzdem | несмотря на это | Наречия | B1
+überdies | кроме того | Наречия | C1
 in | в | Предлоги | A1
 mit | с | Предлоги | A1
 für | для | Предлоги | A1
 ohne | без | Предлоги | A1
 aus | из | Предлоги | A1
-nach | после; в (страну/город) | Предлоги | A1
+nach | после, в | Предлоги | A1
 zu | к, в | Предлоги | A1
 von | от, о | Предлоги | A1
 bei | у, при | Предлоги | A1
-seit | с (прошлого времени) | Предлоги | A1
+seit | с | Предлоги | A1
 durch | через | Предлоги | A2
 gegen | против | Предлоги | A2
 zwischen | между | Предлоги | A2
 während | во время | Предлоги | B1
 wegen | из-за | Предлоги | B1
+ungeachtet | несмотря на | Предлоги | C1
 Guten Morgen | Доброе утро | Фразы и выражения | A1
 Guten Tag | Добрый день | Фразы и выражения | A1
 Guten Abend | Добрый вечер | Фразы и выражения | A1
@@ -513,7 +540,7 @@ Bitte schön | Пожалуйста | Фразы и выражения | A1
 Entschuldigung | Извините | Фразы и выражения | A1
 Ich verstehe nicht | Я не понимаю | Фразы и выражения | A1
 Kein Problem | Без проблем | Фразы и выражения | A1
-Wie geht es Ihnen? | Как у вас дела? | Фразы и выражения | A1
+Wie geht es Ihnen? | Как дела? | Фразы и выражения | A1
 `;
 
 const WORDS = RAW.trim().split('\n').map((line, i) => {
@@ -560,7 +587,7 @@ function getArticleColor(word) {
   if (low.startsWith('der ')) return '#3b82f6';
   if (low.startsWith('die ')) return '#ff3d8b';
   if (low.startsWith('das ')) return '#22c55e';
-  return '#1c1233';
+  return '#140d24';
 }
 
 function renderCard() {
@@ -644,13 +671,13 @@ window.checkQuiz = (btn, ok) => {
 $('guideBtn').onclick = () => {
   $('sheet').innerHTML = `
     <h2 style="margin-top:0">📖 Правила чтения в немецком</h2>
-    <p><b>ei</b> → читается как [ай]: <i>mein (майн), eins (айнс)</i></p>
-    <p><b>ie</b> → долгий [и:]: <i>sie (зи:), lieben (ли:бен)</i></p>
-    <p><b>eu / äu</b> → читается как [ой]: <i>heute (хойте), Häuser (хойзер)</i></p>
-    <p><b>sch</b> → твёрдый [ш]: <i>Schule (шуле), schön (шён)</i></p>
-    <p><b>sp / st</b> в начале слова → [шп / шт]: <i>sprechen (шпрехен), Stadt (штат)</i></p>
-    <p><b>ch</b> после a, o, u → твёрдый [х] (<i>Buch</i>); после e, i, ä, ö, ü → мягкий [хь] (<i>ich</i>).</p>
-    <p><b>ß (Eszett)</b> → всегда читается как глухой [с]: <i>heißen, Straße</i>.</p>
+    <p><b>ei</b> → [ай]: <i>mein, eins</i></p>
+    <p><b>ie</b> → [и:]: <i>sie, lieben</i></p>
+    <p><b>eu / äu</b> → [ой]: <i>heute, Häuser</i></p>
+    <p><b>sch</b> → [ш]: <i>Schule, schön</i></p>
+    <p><b>sp / st</b> → [шп / шт]: <i>sprechen, Stadt</i></p>
+    <p><b>ch</b> после a,o,u → [х]; после e,i,ä,ö,ü → [хь].</p>
+    <p><b>ß</b> → [с]: <i>heißen, Straße</i>.</p>
     <button class="tool-btn" style="width:100%;margin-top:12px" onclick="$('modal').hidden=true">Понятно</button>
   `;
   $('modal').hidden = false;
@@ -658,71 +685,53 @@ $('guideBtn').onclick = () => {
 
 $('modal').onclick = e => { if (e.target === $('modal')) $('modal').hidden = true; };
 
+// Полный глубокий справочник грамматики (от А1 до С1)
 const GRAMMAR_TOPICS = [
   {
-    title: '1. Артикли и 4 падежа (Kasus)',
+    title: '1. Система падежей и артиклей (A1-B1)',
     html: `
-      <p>В немецком языке существительные пишутся с большой буквы и имеют род: <b>der</b> (мужской), <b>die</b> (женский), <b>das</b> (средний), <b>die</b> (множ. число).</p>
-      <h4>Полная таблица склонения определённого артикля:</h4>
+      <p>В немецком языке существительные имеют род и склоняются по 4 падежам: <b>Nominativ, Genitiv, Dativ, Akkusativ</b>.</p>
       <div class="tbl-wrap"><table class="gtbl">
-        <tr><th>Падеж</th><th>Вопрос</th><th>М.р.</th><th>Ж.р.</th><th>Ср.р.</th><th>Мн.ч.</th></tr>
-        <tr><td><b>Nominativ</b> (И.п.)</td><td>Wer? Was?</td><td>der</td><td>die</td><td>das</td><td>die</td></tr>
-        <tr><td><b>Genitiv</b> (Р.п.)</td><td>Wessen?</td><td>des (+s)</td><td>der</td><td>des (+s)</td><td>der</td></tr>
-        <tr><td><b>Dativ</b> (Д.п.)</td><td>Wem? Wo?</td><td>dem</td><td>der</td><td>dem</td><td>den (+n)</td></tr>
-        <tr><td><b>Akkusativ</b> (В.п.)</td><td>Wen? Was?</td><td><b>den</b></td><td>die</td><td>das</td><td>die</td></tr>
+        <tr><th>Падеж</th><th>Вопрос</th><th>М.р. (der)</th><th>Ж.р. (die)</th><th>Ср.р. (das)</th><th>Мн.ч. (die)</th></tr>
+        <tr><td><b>Nominativ</b></td><td>Wer? Was?</td><td>der</td><td>die</td><td>das</td><td>die</td></tr>
+        <tr><td><b>Genitiv</b></td><td>Wessen?</td><td>des ...-s</td><td>der</td><td>des ...-s</td><td>der</td></tr>
+        <tr><td><b>Dativ</b></td><td>Wem? Wo?</td><td>dem</td><td>der</td><td>dem</td><td>den ...-n</td></tr>
+        <tr><td><b>Akkusativ</b></td><td>Wen? Was?</td><td><b>den</b></td><td>die</td><td>das</td><td>die</td></tr>
       </table></div>
-      <div class="ex-box"><b>Пример:</b> Ich sehe <b>den</b> Mann (Akk. — кого?). Ich helfe <b>dem</b> Mann (Dat. — кому?).</div>
+      <div class="ex-box"><b>Нюанс C1:</b> В ряде устойчивых выражений и архаизмов Genitiv используется без окончания или заменяется на конструкцию с <i>von + Dativ</i>.</div>
     `
   },
   {
-    title: '2. Порядок слов в предложении (Satzbau)',
+    title: '2. Синтаксис и порядок слов (Satzbau — A2-B2)',
     html: `
-      <p>Главное правило немецкого синтаксиса: <b>изменяемый глагол в повествовательном предложении всегда стоит на 2-м месте!</b></p>
-      <h4>Три базовые схемы:</h4>
-      <p>• <b>Прямой порядок:</b> [1. Подлежащее] + [2. Глагол] + [Остальное]<br><i>Ich lerne heute Deutsch.</i> (Я учу сегодня немецкий.)</p>
-      <p>• <b>Обратный порядок:</b> [1. Время/Место] + [2. Глагол] + [3. Подлежащее]<br><i>Heute lerne ich Deutsch.</i> (Сегодня я учу немецкий.)</p>
-      <p>• <b>Глагольная рамка:</b> если глаголов два (модальный + инфинитив или Perfekt), второй уходит в самый конец:<br><i>Ich <b>muss</b> heute viel <b>arbeiten</b>.</i></p>
+      <p>• <b>Главное предложение:</b> изменяемый глагол всегда на <b>2-м месте</b>.<br>
+      • <b>Придаточные предложения (Nebensätze):</b> изменяемый глагол уходит в самый <b>конец предложения</b> перед точкой (союзы: <i>dass, weil, obwohl, als, wenn</i>).</p>
+      <div class="ex-box"><b>Пример (B2):</b> Ich weiß nicht, <b>ob</b> er morgen <i>kommen</i> <b>wird</b>. (Я не знаю, придет ли он завтра).</div>
     `
   },
   {
-    title: '3. Спряжение глаголов (Präsens и Perfekt)',
+    title: '3. Времена глаголов: Perfekt, Präteritum, Passiv',
     html: `
-      <h4>Окончания в настоящем времени (Präsens):</h4>
-      <div class="tbl-wrap"><table class="gtbl">
-        <tr><th>Лицо</th><th>Окончание</th><th>machen (делать)</th><th>sein (быть)</th><th>haben (иметь)</th></tr>
-        <tr><td>ich</td><td>-e</td><td>mache</td><td>bin</td><td>habe</td></tr>
-        <tr><td>du</td><td>-st</td><td>machst</td><td>bist</td><td>hast</td></tr>
-        <tr><td>er/sie/es</td><td>-t</td><td>macht</td><td>ist</td><td>hat</td></tr>
-        <tr><td>wir</td><td>-en</td><td>machen</td><td>sind</td><td>haben</td></tr>
-        <tr><td>ihr</td><td>-t</td><td>macht</td><td>seid</td><td>habt</td></tr>
-        <tr><td>sie / Sie</td><td>-en</td><td>machen</td><td>sind</td><td>haben</td></tr>
-      </table></div>
-      <h4>Прошедшее разговорное время (Perfekt):</h4>
-      <p>Строится по формуле: <b>haben / sein</b> (на 2-м месте) + <b>Partizip II</b> (в самом конце).</p>
-      <div class="ex-box"><b>Примеры:</b> Ich <b>habe</b> ein Buch <b>gekauft</b>. (Я купил книгу.)<br>Er <b>ist</b> nach Berlin <b>gefahren</b>. (Он поехал в Берлин — глагол движения с <i>sein</i>.)</div>
+      <p>• <b>Präsens / Präteritum / Perfekt</b> — базовые времена для описания событий в настоящем и прошлом.<br>
+      • <b>Passiv (Пассивный залог):</b> образуется с помощью глагола <i>werden</i> + <i>Partizip II</i> на конце.</p>
+      <div class="ex-box"><b>Пример:</b> Das Auto <b>wurde</b> gestern <i>repariert</i>. (Машина была отремонтирована вчера).</div>
     `
   },
   {
-    title: '4. Модальные глаголы (Modalverben)',
+    title: '4. Сослагательное наклонение (Konjunktiv II — B2-C1)',
     html: `
-      <p>Модальные глаголы выражают отношение к действию и требуют инфинитива без частицы <i>zu</i> в конце предложения:</p>
-      <p>• <b>können</b> — мочь, уметь<br>
-      • <b>müssen</b> — быть должным (строгая необходимость)<br>
-      • <b>wollen</b> — хотеть, намереваться<br>
-      • <b>dürfen</b> — иметь разрешение (можно / нельзя)<br>
-      • <b>sollen</b> — быть должным по поручению, совету<br>
-      • <b>mögen / möchten</b> — любить / вежливое «хотел бы»</p>
-      <div class="ex-box"><b>Пример:</b> Ich <b>möchte</b> einen Kaffee <b>bestellen</b>. (Я хотел бы заказать кофе.)</div>
+      <p>Используется для нереальных условий, вежливых просьб и гипотез.</p>
+      <p>• <b>Формула:</b> <i>würde</i> + инфинитив либо претеритальные формы с умлаутом (<i>hätte, wäre, könnte</i>).</p>
+      <div class="ex-box"><b>Пример:</b> Wenn ich Zeit <b>hätte</b>, <b>würde</b> ich reisen. (Если бы у меня было время, я бы путешествовал.)</div>
     `
   },
   {
-    title: '5. Предлоги с Akkusativ, Dativ и двойного управления',
+    title: '5. Управление глаголов и предлогов (Rektion — B2-C1)',
     html: `
-      <p><b>Всегда Akkusativ (кого? что?):</b> <i>für (для), ohne (без), durch (через), gegen (против), um (вокруг/в), bis (до)</i>.</p>
-      <p><b>Всегда Dativ (кому? чему?):</b> <i>mit (с), nach (после/в), aus (из), zu (к), von (от), bei (у/при), seit (с тех пор как)</i>.</p>
-      <p><b>Двойное управление (in, an, auf, unter, über, vor, hinter, neben, zwischen):</b><br>
-      • Вопрос <b>Wohin? (Куда? — движение)</b> → <b>Akkusativ</b>: <i>Ich gehe in <b>den</b> Park.</i><br>
-      • Вопрос <b>Wo? (Где? — покой)</b> → <b>Dativ</b>: <i>Ich bin in <b>dem</b> (im) Park.</i></p>
+      <p>На продвинутом уровне критически важно знать падежи после предлогов:</p>
+      <p>• <i>sich erinnern <b>an</b> (+ Akk)</i> — помнить о...<br>
+      • <i>abhängen <b>von</b> (+ Dat)</i> — зависеть от...</p>
+      <div class="ex-box">В тестах уровня C1 проверяется точное знание предложных дополнений и номинативных конструкций.</div>
     `
   }
 ];
@@ -734,45 +743,111 @@ $('grContent').innerHTML = GRAMMAR_TOPICS.map((t, i) => `
   </details>
 `).join('');
 
+// Интерактивные тесты для закрепления базы (A1-C1)
+const TESTS_DATA = [
+  {
+    q: '1. Какой артикль имеет существительное "Tisch" (стол)?',
+    options: ['die', 'das', 'der'],
+    answer: 2,
+    explain: 'Правильно: der Tisch (мужской род).'
+  },
+  {
+    q: '2. Выберите правильную форму глагола: "Du ... gut Deutsch."',
+    options: ['spreche', 'sprichst', 'spricht'],
+    answer: 1,
+    explain: 'Правильно: Du sprichst (корневая гласная e меняется на i для du).'
+  },
+  {
+    q: '3. Какой падеж требует предлог "mit" (с)?',
+    options: ['Nominativ', 'Akkusativ', 'Dativ'],
+    answer: 2,
+    explain: 'Правильно: Предлог mit всегда управляет Dativ (mit dem Freund).'
+  },
+  {
+    q: '4. Куда встает изменяемый глагол в придаточном предложении с союзом "weil"?',
+    options: ['На 2-е место', 'В самый конец предложения', 'На 1-е место'],
+    answer: 1,
+    explain: 'Правильно: В придаточных предложениях глагол уходит в конец.'
+  },
+  {
+    q: '5. Выберите форму Konjunktiv II от глагола "haben" для местоимения "ich":',
+    options: ['hätte', 'habe', 'hatte'],
+    answer: 0,
+    explain: 'Правильно: hätte (сослагательное наклонение).'
+  }
+];
+
+function renderTests() {
+  $('testsContainer').innerHTML = TESTS_DATA.map((t, idx) => `
+    <div class="test-box" id="tbox-${idx}">
+      <div class="test-q">${t.q}</div>
+      ${t.options.map((opt, oIdx) => `
+        <button class="test-opt" onclick="checkTest(${idx}, ${oIdx}, ${t.answer}, this)">${opt}</button>
+      `).join('')}
+      <div id="texp-${idx}" style="margin-top:8px; font-size:13px; font-weight:700;" hidden></div>
+    </div>
+  `).join('');
+}
+
+window.checkTest = (tIdx, chosen, correct, btn) => {
+  const box = $(`tbox-${tIdx}`);
+  const buttons = box.querySelectorAll('.test-opt');
+  buttons.forEach(b => b.style.pointerEvents = 'none');
+  
+  if (chosen === correct) {
+    btn.classList.add('correct');
+  } else {
+    btn.classList.add('wrong');
+    buttons[correct].classList.add('correct');
+  }
+  
+  const exp = $(`texp-${tIdx}`);
+  exp.hidden = false;
+  exp.style.color = chosen === correct ? '#3ddc84' : '#ff5a73';
+  exp.textContent = chosen === correct ? `✅ Верно! ${TESTS_DATA[tIdx].explain}` : `❌ Ошибка. ${TESTS_DATA[tIdx].explain}`;
+};
+
+renderTests();
+
 const AI_SCENARIOS = {
   intro: {
-    start: { de: 'Hallo! Ich heiße {name}. Wie heißt du und woher kommst du?', ru: 'Привет! Меня зовут {name}. Как тебя зовут и откуда ты?' },
-    chips: ['Ich heiße Alisher.', 'Ich komme aus Usbekistan.', 'Ich lerne Deutsch.'],
+    start: { de: 'Hallo! Ich heiße {name}. Wie heißt du und was machst du im Leben?', ru: 'Привет! Меня зовут {name}. Как тебя зовут и чем ты занимаешься в жизни?' },
+    chips: ['Ich heiße Alisher.', 'Ich arbeite als Projektmanager.', 'Ich lerne fortgeschrittenes Deutsch.'],
     replies: [
-      { de: 'Sehr schön! Wie lange lernst du schon Deutsch und was machst du beruflich?', ru: 'Очень приятно! Как давно ты уже учишь немецкий и кем работаешь?' },
-      { de: 'Das klingt super! Warum lernst du Deutsch? Möchtest du in Deutschland arbeiten oder studieren?', ru: 'Звучит супер! Почему ты учишь немецкий? Хочешь работать или учиться в Германии?' }
+      { de: 'Das ist äusserst interessant! Welche beruflichen Ziele verfolgst du in nächster Zeit?', ru: 'Это чрезвычайно интересно! Какие профессиональные цели ты преследуешь в ближайшее время?' },
+      { de: 'Großartig! Ein starker Wortschatz ist der Schlüssel zum Erfolg auf dem C1-Niveau.', ru: 'Великолепно! Богатый словарный запас — ключ к успеху на уровне C1.' }
     ]
   },
   cafe: {
-    start: { de: 'Guten Tag! Willkommen im Café. Was möchten Sie gern bestellen?', ru: 'Добрый день! Добро пожаловать в кафе. Что бы вы хотели заказать?' },
-    chips: ['Ich möchte einen Kaffee, bitte.', 'Haben Sie auch Kuchen?', 'Die Rechnung, bitte!'],
+    start: { de: 'Guten Tag! Willkommen in unserem Restaurant. Haben Sie eine Reservierung?', ru: 'Добрый день! Добро пожаловать в наш ресторан. У вас есть бронь?' },
+    chips: ['Ja, auf den Namen Alisher.', 'Wir hätten gerne einen Tisch am Fenster.', 'Die Speisekarte, bitte.'],
     replies: [
-      { de: 'Gerne! Möchten Sie den Kaffee mit Milch und Zucker? Und vielleicht noch etwas zum Essen?', ru: 'С удовольствием! Вам кофе с молоком и сахаром? И, может быть, что-нибудь поесть?' },
-      { de: 'Kommt sofort! Das macht zusammen 6 Euro 50. Zahlen Sie bar oder mit Karte?', ru: 'Сейчас принесу! Итого 6 евро 50 центов. Оплатите наличными или картой?' }
+      { de: 'Selbstverständlich, folgen Sie mir bitte. Darf ich Ihnen direkt als Aperitif etwas empfehlen?', ru: 'Разумеется, пройдите за мной. Могу ли я сразу порекомендовать вам что-нибудь в качестве аперитива?' },
+      { de: 'Ausgezeichnet. Ich bringe Ihnen die Karte in wenigen Augenblicken.', ru: 'Отлично. Я принесу вам меню через несколько мгновений.' }
     ]
   },
   shop: {
-    start: { de: 'Hallo! Kann ich Ihnen helfen? Suchen Sie etwas Bestimmtes?', ru: 'Здравствуйте! Могу я вам помочь? Вы ищете что-то конкретное?' },
-    chips: ['Ich suche eine Jacke.', 'Was kostet das?', 'Haben Sie das in Größe M?'],
+    start: { de: 'Guten Tag! Wie kann ich Ihnen behilflich sein? Suchen Sie etwas Hochwertiges?', ru: 'Добрый день! Чем могу вам помочь? Вы ищете что-то высококачественное?' },
+    chips: ['Ich suche dezente Business-Kleidung.', 'Welche Materialien sind nachhaltig?', 'Gibt es darauf Rabatt?'],
     replies: [
-      { de: 'Ja, natürlich! Welche Farbe gefällt Ihnen am besten? Wir haben Blau, Schwarz und Grün.', ru: 'Да, конечно! Какой цвет вам нравится больше всего? У нас есть синий, чёрный и зелёный.' },
-      { de: 'Die Anprobe ist dort links. Sagen Sie mir Bescheid, ob es gut passt!', ru: 'Примерочная там слева. Скажите мне, хорошо ли подходит!' }
+      { de: 'Wir haben exklusive Anzüge aus reiner Schurwolle vorrätig. Möchten Sie diese anprobieren?', ru: 'У нас в наличии эксклюзивные костюмы из чистой шерсти. Хотите их примерить?' },
+      { de: 'Die Verarbeitung entspricht höchsten Standards.', ru: 'Качество изготовления соответствует высочайшим стандартам.' }
     ]
   },
   work: {
-    start: { de: 'Hallo! Erzähl mal: Was ist dein Beruf und wie sieht dein Arbeitstag aus?', ru: 'Привет! Расскажи: кто ты по профессии и как проходит твой рабочий день?' },
-    chips: ['Ich arbeite als Projektmanager.', 'Ich habe viel zu tun.', 'Meine Arbeit ist interessant.'],
+    start: { de: 'Guten Tag! Erzählen Sie mir von Ihrer bisherigen Erfahrung im Projektmanagement.', ru: 'Добрый день! Расскажите мне о вашем предыдущем опыте в управлении проектами.' },
+    chips: ['Ich koordiniere internationale Teams.', 'Ich optimiere digitale Workflows.', 'Ich trage hohe Verantwortung.'],
     replies: [
-      { de: 'Spannend! Arbeitest du lieber im Büro oder im Homeoffice? Und wie sind deine Kollegen?', ru: 'Увлекательно! Ты предпочитаешь работать в офисе или удалённо? И какие у тебя коллеги?' },
-      { de: 'Was machst du gern nach der Arbeit, um dich zu entspannen?', ru: 'Чем ты любишь заниматься после работы, чтобы расслабиться?' }
+      { de: 'Das zeugt von hoher Kompetenz. Wie gehen Sie mit unvorhergesehenen Krisen um?', ru: 'Это свидетельствует о высокой компетентности. Как вы справляетесь с непредвиденными кризисами?' },
+      { de: 'Eine strukturierte Herangehensweise ist in unserem Bereich essenziell.', ru: 'Структурированный подход в нашей сфере имеет ключевое значение.' }
     ]
   },
-  travel: {
-    start: { de: 'Hi! Wohin möchtest du gern reisen und wie fährst du am liebsten — mit dem Zug oder dem Flugzeug?', ru: 'Привет! Куда бы ты хотел поехать и на чём любишь путешествовать больше всего — на поезде или самолёте?' },
-    chips: ['Ich möchte nach Berlin fliegen.', 'Ich reise gern mit dem Zug.', 'Wo ist der Bahnhof?'],
+  society: {
+    start: { de: 'Hallo! Was denken Sie: Welche Rolle spielt die künstliche Intelligenz in unserer Zukunft?', ru: 'Привет! Как вы думаете: какую роль играет искусственный интеллект в нашем будущем?' },
+    chips: ['KI revolutioniert die Arbeitswelt.', 'Man muss ethische Aspekte berücksichtigen.', 'Technischer Fortschritt ist unaufhaltsim.'],
     replies: [
-      { de: 'Berlin ist eine tolle Stadt! Warst du schon einmal in Europa?', ru: 'Берлин — отличный город! Ты уже бывал раньше в Европе?' },
-      { de: 'Vergiss nicht deinen Reisepass und die Fahrkarte! Brauchst du noch Tipps für die Reise?', ru: 'Не забудь загранпаспорт и билет! Тебе нужны ещё советы для поездки?' }
+      { de: 'Ein sehr tiefgründiges Argument! Diskutieren wir darüber, wie sich Bildung anpassen muss.', ru: 'Очень глубокий аргумент! Давайте обсудим, как должно адаптироваться образование.' },
+      { de: 'Genau das ist die zentrale Herausforderung unseres Jahrhunderts.', ru: 'Именно это является центральной задачей нашего века.' }
     ]
   }
 };
@@ -782,13 +857,7 @@ let aiTurn = 0;
 function checkGermanErrors(text) {
   const tips = [];
   if (/\bich habe \d+ jahre/i.test(text)) {
-    tips.push('💡 Подсказка: возраст по-немецки выражается через глагол <b>sein</b>: <i>Ich bin ... Jahre alt</i>.');
-  }
-  if (/\bich gehe nach berlin|\bich gehe nach deutschland/i.test(text)) {
-    tips.push('💡 Подсказка: в другой город или страну лучше использовать глагол <b>fahren</b> (ехать) или <b>fliegen</b> (лететь) вместо <i>gehen</i>.');
-  }
-  if (/\bich möchte ein kaffee\b/i.test(text)) {
-    tips.push('💡 Подсказка: <i>der Kaffee</i> — мужского рода, в Akkusativ нужен артикль <b>einen</b>: <i>einen Kaffee</i>.');
+    tips.push('💡 Подсказка: возраст выражается через глагол <b>sein</b>: <i>Ich bin ... Jahre alt</i>.');
   }
   return tips.join(' ');
 }
@@ -847,13 +916,13 @@ $('aiPersona').onchange = initAI;
 $('aiTopic').onchange = initAI;
 
 function renderMe() {
-  const lvls = ['A1', 'A2', 'B1'];
+  const lvls = ['A1', 'A2', 'B1', 'B2', 'C1'];
   $('meStats').innerHTML = lvls.map(l => {
     const all = WORDS.filter(w => w.lvl === l);
     const done = all.filter(w => knownSet.has(w.de)).length;
     const pct = all.length ? Math.round((done / all.length) * 100) : 0;
     return `
-      <div style="background:#20133d;padding:14px;border-radius:16px;margin-bottom:10px;border:1px solid rgba(255,255,255,0.2)">
+      <div style="background:#180e30;padding:14px;border-radius:16px;margin-bottom:10px;border:1px solid rgba(255,255,255,0.2)">
         <div style="display:flex;justify-content:space-between;font-weight:800">
           <span>Уровень ${l}</span><span>${done} / ${all.length} (${pct}%)</span>
         </div>
@@ -873,6 +942,7 @@ document.querySelectorAll('#tabs button').forEach(btn => {
     $('hdr').hidden = t !== 'w';
     $('main').hidden = t !== 'w';
     $('gr').hidden = t !== 'g';
+    $('ts').hidden = t !== 't';
     $('ai').hidden = t !== 'a';
     $('me').hidden = t !== 'p';
     if (t === 'p') renderMe();
