@@ -130,6 +130,27 @@
   #tabs button { flex: 1; max-width: 140px; padding: 10px 0; border-radius: 14px; border: 2px solid transparent; background: none; color: #fff; font-size: 13px; font-weight: 700; cursor: pointer; }
   #tabs button.on { background: rgba(255,255,255,.14); border-color: rgba(255,255,255,.3); }
   .sheet b { color: #ffb627; }
+  html { -webkit-text-size-adjust: 100%; }
+  html, body { height: auto; min-height: 100%; }
+  body { overflow-x: hidden; overflow-y: auto; -webkit-overflow-scrolling: touch; justify-content: flex-start; }
+  main { justify-content: flex-start; gap: 14px; padding-bottom: 8px; }
+  .scene { height: clamp(190px, 30vh, 250px); }
+  .fab { right: 8px; top: 8px; width: 52px; height: 52px; }
+  .btn { min-height: 54px; }
+  .shuffle { min-height: 46px; padding: 10px 16px; }
+  .opt { min-height: 52px; }
+  #tabs button { min-height: 50px; font-size: 12px; padding: 6px 2px; }
+  .screen { overflow: visible; flex: none; }
+  .sheet { max-height: 86vh; max-height: 86dvh; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; overflow-x: auto; }
+  .sheet table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 14px; }
+  .sheet th, .sheet td { border: 1px solid rgba(255,255,255,.22); padding: 7px 8px; text-align: left; vertical-align: top; }
+  .sheet th { background: rgba(255,255,255,.12); }
+  .sheet h3 { margin: 14px 0 4px; font-size: 16px; color: #19d3c5; }
+  .msg { padding: 10px 13px; border-radius: 16px; margin: 8px 0; max-width: 92%; white-space: pre-wrap; line-height: 1.4; font-size: 15px; }
+  .msg.me { background: #3b82f6; margin-left: auto; } .msg.bot { background: rgba(255,255,255,.13); }
+  #log { min-height: 32vh; } .aiRow { display: flex; gap: 8px; margin-top: 10px; }
+  .aiRow .opt { margin: 0; flex: 1; } .aiRow .btn { flex: none; width: 60px; }
+  @media (max-width: 380px) { h1 { font-size: 22px; } .word { font-size: clamp(28px, 10vw, 44px); } }
   @media (prefers-reduced-motion: reduce) { .blob, .letter, .card, .card.enter { animation: none; transition: none; } }
 </style>
 </head>
@@ -167,8 +188,9 @@
 </main>
 
 <section id="gr" class="screen" hidden></section>
+<section id="ai" class="screen" hidden></section>
 <section id="me" class="screen" hidden></section>
-<div id="tabs"><button data-t="w" class="on">📇 Слова</button><button data-t="g">📘 Грамматика</button><button data-t="p">👤 Прогресс</button></div>
+<div id="tabs"><button data-t="w" class="on">📇 Слова</button><button data-t="g">📘 Грамматика</button><button data-t="a">💬 ИИ</button><button data-t="p">👤 Прогресс</button></div>
 <div id="modal" hidden><div class="sheet" id="sheet"></div></div>
 <script>
   // Слова из тетради. Формат строки: немецкое | перевод | категория (категорию можно не указывать)
@@ -1375,6 +1397,15 @@ const isLocked = k => LVKEY[k] && !unlocked(LVKEY[k]);
 {id:"c1-4",l:"C1",t:"Модальные частицы",b:"<p>Придают речи оттенок: <b>doch</b> (мягко настаивает): Komm doch mal vorbei! <b>ja</b> (ведь, это известно): Das ist ja klar! <b>eben/halt</b> (ничего не поделаешь): Das ist eben so. <b>mal</b> смягчает просьбу.</p>",q:[["Komm ___ mal vorbei! (мягкое побуждение)",["doch","eben","ja"],0],["«Das ist eben so.» значит:",["Ничего не поделаешь","Ровно так","Вчера было так"],0],["Das ist ___ klar! (ведь это очевидно)",["ja","mal","halt"],0]]},
 {id:"c1-5",l:"C1",t:"Konjunktiv II в прошедшем",b:"<p>О несбывшемся: <b>hätte/wäre + Partizip II</b>. Wenn ich das gewusst <b>hätte</b>, <b>wäre</b> ich gekommen. Ich <b>hätte</b> das nie getan.</p>",q:[["Wenn ich das gewusst ___, wäre ich gekommen.",["hätte","habe","hatte"],0],["Wenn er Zeit gehabt hätte, ___ er gekommen.",["wäre","hätte","war"],0],["Ich ___ das nie getan.",["hätte","bin","habe"],0]]}
   );
+  const RICH = {
+    "a1-1": "<h3>Зачем это нужно</h3><p><b>sein</b> (быть) и <b>haben</b> (иметь) — самые частые глаголы. Они неправильные, их нужно выучить наизусть. Они же помогают строить прошедшее время (Perfekt).</p><table><tr><th>Лицо</th><th>sein</th><th>haben</th><th>lernen (правильный)</th></tr><tr><td>ich</td><td>bin</td><td>habe</td><td>lerne</td></tr><tr><td>du</td><td>bist</td><td>hast</td><td>lernst</td></tr><tr><td>er/sie/es</td><td>ist</td><td>hat</td><td>lernt</td></tr><tr><td>wir</td><td>sind</td><td>haben</td><td>lernen</td></tr><tr><td>ihr</td><td>seid</td><td>habt</td><td>lernt</td></tr><tr><td>sie/Sie</td><td>sind</td><td>haben</td><td>lernen</td></tr></table><h3>Когда что использовать</h3><p><b>sein</b>: профессия, национальность, состояние, возраст: Ich bin Lehrer. Ich bin müde. Ich bin 20 Jahre alt.</p><p><b>haben</b>: обладание и состояния-«ощущения»: Ich habe einen Hund. Ich habe Hunger / Durst / Angst.</p><h3>Частая ошибка</h3><p>Нельзя сказать «Ich habe 20 Jahre». Правильно: <b>Ich bin</b> 20 Jahre alt.</p>",
+    "a1-2": "<h3>Три рода и множественное число</h3><p>У каждого существительного есть род: <b>der</b> (м.), <b>die</b> (ж.), <b>das</b> (ср.). Во мн. числе артикль всегда <b>die</b>. Артикль нужно учить вместе со словом, но есть подсказки по окончаниям:</p><table><tr><th>Окончание</th><th>Род</th><th>Пример</th></tr><tr><td>-ung, -heit, -keit, -schaft, -ion</td><td>die</td><td>die Zeitung, die Freiheit</td></tr><tr><td>-er (профессии), -ling, -ismus</td><td>der</td><td>der Lehrer, der Tourismus</td></tr><tr><td>-chen, -lein, -um</td><td>das</td><td>das Mädchen, das Zentrum</td></tr></table><h3>Падежи: определённый артикль</h3><table><tr><th>Падеж (вопрос)</th><th>м.</th><th>ж.</th><th>ср.</th><th>мн.</th></tr><tr><td>Nominativ (кто? что?)</td><td>der</td><td>die</td><td>das</td><td>die</td></tr><tr><td>Akkusativ (кого? что?)</td><td><b>den</b></td><td>die</td><td>das</td><td>die</td></tr><tr><td>Dativ (кому? чему?)</td><td><b>dem</b></td><td><b>der</b></td><td><b>dem</b></td><td><b>den</b> (+n)</td></tr><tr><td>Genitiv (чей? чего?)</td><td>des (+s)</td><td>der</td><td>des (+s)</td><td>der</td></tr></table><h3>Неопределённый артикль</h3><table><tr><th></th><th>м.</th><th>ж.</th><th>ср.</th></tr><tr><td>Nom.</td><td>ein</td><td>eine</td><td>ein</td></tr><tr><td>Akk.</td><td>einen</td><td>eine</td><td>ein</td></tr><tr><td>Dat.</td><td>einem</td><td>einer</td><td>einem</td></tr></table><p>Пример: Das ist <b>ein</b> Hund. Ich sehe <b>einen</b> Hund. Ich gebe <b>einem</b> Hund Wasser.</p>",
+    "a1-3": "<h3>Главное правило: глагол на втором месте</h3><p>В повествовательном предложении спрягаемый глагол всегда занимает <b>вторую позицию</b> (не второе слово, а вторую смысловую группу).</p><table><tr><th>Позиция 1</th><th>Позиция 2 (глагол)</th><th>Середина</th><th>Конец</th></tr><tr><td>Ich</td><td>lerne</td><td>heute</td><td>Deutsch.</td></tr><tr><td>Heute</td><td>lerne</td><td>ich</td><td>Deutsch.</td></tr><tr><td>Ich</td><td>möchte</td><td>heute</td><td>Deutsch lernen.</td></tr><tr><td>Mein Bruder</td><td>kommt</td><td>morgen</td><td>nach Hause.</td></tr></table><h3>Типы предложений</h3><table><tr><th>Тип</th><th>Схема</th><th>Пример</th></tr><tr><td>Вопрос без вопр. слова</td><td>Глагол + подлежащее</td><td>Lernst du Deutsch?</td></tr><tr><td>Вопрос со словом</td><td>W-слово + глагол + подлежащее</td><td>Wo wohnst du?</td></tr><tr><td>Просьба/приказ</td><td>Глагол на 1-м месте</td><td>Komm bitte!</td></tr></table><h3>Порядок обстоятельств (TeKaMoLo)</h3><p>Время → Причина → Образ действия → Место: Ich fahre <b>morgen</b> (Te) <b>wegen der Arbeit</b> (Ka) <b>mit dem Zug</b> (Mo) <b>nach Berlin</b> (Lo).</p>",
+    "a2-1": "<h3>Как образуется Perfekt</h3><p>Perfekt — разговорное прошедшее. Формула: <b>haben/sein</b> (на 2-м месте) + <b>Partizip II</b> (в конце): Ich habe gestern Pizza gegessen.</p><h3>Образование Partizip II</h3><table><tr><th>Тип</th><th>Схема</th><th>Примеры</th></tr><tr><td>Слабые</td><td>ge-…-t</td><td>lernen → gelernt, machen → gemacht</td></tr><tr><td>Сильные</td><td>ge-…-en (часто смена гласной)</td><td>gehen → gegangen, essen → gegessen, sehen → gesehen</td></tr><tr><td>С приставкой be-, ver-, ent-</td><td>без ge-</td><td>besuchen → besucht, verstehen → verstanden</td></tr><tr><td>На -ieren</td><td>без ge-</td><td>studieren → studiert</td></tr><tr><td>Отделяемые</td><td>приставка + ge + основа</td><td>aufstehen → aufgestanden, anrufen → angerufen</td></tr></table><h3>haben или sein?</h3><p><b>sein</b> — глаголы движения и смены состояния, а также sein, bleiben, werden: Ich bin nach Berlin gefahren. Er ist eingeschlafen. Wir sind zu Hause geblieben.</p><p><b>haben</b> — все остальные: Ich habe das Buch gelesen.</p><p>Порядок слов: Gestern <b>habe</b> ich einen Film <b>gesehen</b>.</p>",
+    "a2-3": "<h3>Что такое падеж</h3><p>Падеж показывает роль слова в предложении. Меняется артикль (а иногда и окончание слова).</p><table><tr><th></th><th>м.</th><th>ж.</th><th>ср.</th><th>мн.</th></tr><tr><td>Akkusativ</td><td>den</td><td>die</td><td>das</td><td>die</td></tr><tr><td>Dativ</td><td>dem</td><td>der</td><td>dem</td><td>den + n</td></tr></table><h3>Какие предлоги с каким падежом</h3><table><tr><th>Падеж</th><th>Предлоги</th></tr><tr><td>Akkusativ</td><td>durch, für, gegen, ohne, um</td></tr><tr><td>Dativ</td><td>aus, bei, mit, nach, seit, von, zu</td></tr></table><h3>Глаголы с Dativ</h3><p>helfen, danken, gefallen, gehören, schmecken: Ich helfe <b>dem</b> Mann. Das Buch gehört <b>der</b> Frau.</p><h3>Два дополнения сразу</h3><p>Dativ (кому) обычно идёт перед Akkusativ (что): Ich gebe <b>dem Mann</b> <b>das Buch</b>. Если Akkusativ — местоимение, то оно первое: Ich gebe <b>es</b> <b>dem Mann</b>.</p>",
+    "b1-1": "<h3>Придаточное предложение</h3><p>В придаточном <b>спрягаемый глагол уходит в самый конец</b>. Перед придаточным ставится запятая.</p><table><tr><th>Союз</th><th>Значение</th><th>Пример</th></tr><tr><td>weil</td><td>потому что</td><td>Ich bleibe hier, weil ich krank bin.</td></tr><tr><td>dass</td><td>что</td><td>Ich glaube, dass er kommt.</td></tr><tr><td>wenn</td><td>если, когда (повторяется)</td><td>Wenn es regnet, bleibe ich hier.</td></tr><tr><td>ob</td><td>ли</td><td>Ich weiß nicht, ob er kommt.</td></tr><tr><td>obwohl</td><td>хотя</td><td>Obwohl ich müde bin, arbeite ich.</td></tr><tr><td>damit</td><td>чтобы (другой субъект)</td><td>Ich helfe dir, damit du fertig wirst.</td></tr></table><h3>Если в придаточном несколько глаголов</h3><p>Спрягаемый глагол — в самом конце: …, weil ich arbeiten <b>muss</b>. …, weil ich gearbeitet <b>habe</b>. …, weil ich früh <b>aufstehe</b> (приставка снова присоединяется).</p><h3>Придаточное первым</h3><p>Тогда в главном предложении глагол идёт сразу после запятой: Weil ich krank bin, <b>bleibe ich</b> zu Hause.</p>"
+  };
+  GR.forEach(x => { if (RICH[x.id]) x.b = RICH[x.id]; });
   let gp = new Set();
   try { gp = new Set(JSON.parse(localStorage.getItem("gp") || "[]")); } catch (e) {}
   function refreshScreens() { render(); if (!$("gr").hidden) renderGr(); if (!$("me").hidden) renderMe(); }
@@ -1429,11 +1460,41 @@ const isLocked = k => LVKEY[k] && !unlocked(LVKEY[k]);
     });
     $("me").innerHTML = h;
   }
+  // ===== ИИ-собеседник (нужен адрес твоего прокси, см. инструкцию) =====
+  const AI_URL = "";
+  let chat = [{ r: "bot", t: "Hallo! Ich bin dein Gesprächspartner. Wie heißt du? Und woher kommst du?" }], aiLevel = "A1", aiBusy = false;
+  const aiWords = () => pool().filter(w => !known.has(w.de)).slice(0, 5).map(w => w.de.replace(/^(der|die|das) /, ""));
+  const esc = t => t.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+  function logFill() {
+    $("log").innerHTML = chat.map(m => '<div class="msg ' + (m.r === "me" ? "me" : "bot") + '">' + esc(m.t) + "</div>").join("");
+    if ($("log").lastElementChild) $("log").lastElementChild.scrollIntoView({ block: "end" });
+  }
+  function renderAi() {
+    const lv = LEVELS.filter(([l]) => unlocked(l)).map(([l]) => "<option" + (l === aiLevel ? " selected" : "") + ">" + l + "</option>").join("");
+    $("ai").innerHTML = '<h1>💬 ИИ-собеседник</h1><p>Уровень беседы: <select id="aiLvl">' + lv + "</select></p><p>Постарайся использовать слова: <b>" + aiWords().join(", ") + '</b></p><div id="log"></div><div class="aiRow"><input id="aiIn" class="opt" placeholder="Schreib auf Deutsch…" autocomplete="off"><button id="aiGo" class="btn knowb">➤</button></div><p style="opacity:.7;font-size:13px">ИИ мягко исправит ошибки (строка ✏️) и задаст встречный вопрос.</p>';
+    $("aiLvl").onchange = () => { aiLevel = $("aiLvl").value; };
+    $("aiGo").onclick = aiSend;
+    $("aiIn").onkeydown = e => { if (e.key === "Enter") aiSend(); };
+    logFill();
+  }
+  async function aiSend() {
+    const t = $("aiIn").value.trim();
+    if (!t || aiBusy) return;
+    chat.push({ r: "me", t }); $("aiIn").value = ""; logFill();
+    if (!AI_URL) { chat.push({ r: "bot", t: "ИИ ещё не подключён: впиши адрес в строку AI_URL в файле (инструкция в чате)." }); logFill(); return; }
+    aiBusy = true; chat.push({ r: "bot", t: "…" }); logFill();
+    try {
+      const res = await fetch(AI_URL, { method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ level: aiLevel, words: aiWords(), messages: chat.slice(1, -1).map(m => ({ role: m.r === "me" ? "user" : "assistant", content: m.t })) }) });
+      const d = await res.json(); chat[chat.length - 1].t = d.reply || "Fehler. Versuch es noch einmal.";
+    } catch (e) { chat[chat.length - 1].t = "Нет связи. Попробуй ещё раз."; }
+    aiBusy = false; logFill();
+  }
   function show(n) {
     document.querySelector("header").hidden = n !== "w"; document.querySelector("main").hidden = n !== "w";
-    $("gr").hidden = n !== "g"; $("me").hidden = n !== "p";
+    $("gr").hidden = n !== "g"; $("me").hidden = n !== "p"; $("ai").hidden = n !== "a";
     document.querySelectorAll("#tabs button").forEach(b => b.classList.toggle("on", b.dataset.t === n));
-    if (n === "g") renderGr(); if (n === "p") renderMe();
+    if (n === "g") renderGr(); if (n === "p") renderMe(); if (n === "a") renderAi();
   }
   document.querySelectorAll("#tabs button").forEach(b => b.onclick = () => show(b.dataset.t));
 
